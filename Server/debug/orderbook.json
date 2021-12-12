@@ -1,0 +1,29 @@
+{
+    "orders" :
+    {
+        "1638635146188" :
+        {
+            "boughtAt" : 1638635146188,
+            "assetAmount" : 0.1,
+            "assetPriceUsed" : 4051,
+            "status" : "open",
+            "closedAt" : 0
+        },
+        "1638635146190" :
+        {
+            "boughtAt" : 1638635146188,
+            "assetAmount" : 0.1,
+            "assetPriceUsed" : 4500,
+            "status" : "open",
+            "closedAt" : 0
+        },
+        "1638635146189" :
+        {
+            "boughtAt" : 1638635146188,
+            "assetAmount" : 0.1,
+            "assetPriceUsed" : 200,
+            "status" : "open",
+            "closedAt" : 0
+        }
+    }
+  }
