@@ -28,7 +28,7 @@ const binancebaseUrl = 'https://api.binance.com/api/v3/ticker/price?symbol=';
 const stepsBackInTime = 180;
 const minimalProfitPercent = 0.005;
 const minimalProfitBUSD = 0.05;
-const movingAverageShortterm = 10;
+const movingAverageShortterm = 14;
 const movingAverageLongterm = 40;
 const adxInterval = 10;
 
@@ -39,7 +39,7 @@ const client = getBinanceClient();
 
 // Markets
 let busdMarkets = [];
-const assets = ["DOT", "ADA", "SOL", "DOGE", "DAR", "YGG", "BNB"]
+const assets = ["DOT", "ADA", "AUDIO", "SOL", "DOGE", "YGG", "TRX"]
 const base = "BUSD"
 
 // Global database variable
@@ -49,7 +49,11 @@ let db = null;
 const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
 const rocState = {"CROSSED_TO_POSITIVE": "CROSSED_TO_POSITIVE", "CROSSED_TO_NEGATIVE": "CROSSED_TO_NEGATIVE", "ZERO_ERROR": "ZERO_ERROR", "NO_CHANGE": "NO_CHANGE"}
 const buyStrategyState = {"GOLDENCROSS": "GOLDENCROSS"
-                         ,"GOLDENCROSS_BULL": "GOLDENCROSS_BULL"}
+                         ,"GOLDENCROSS_BULL": "GOLDENCROSS_BULL"
+                         ,"MACD_MA": "MACD_MA"
+                         ,"ADX_MA": "ADX_MA"}
+let selectedBuyStrategy = buyStrategyState.ADX_MA;
+
 const sellStrategyState = {"MASHORT_ABOVE_MALONG_ROC_ZERO": "MASHORT_ABOVE_MALONG_ROC_ZERO"
                           ,"PRICE_X_ABOVE_BUY_PRICE": "PRICE_X_ABOVE_BUY_PRICE"
                           ,"DYNAMIC_STOP": "DYNAMIC_STOP"}
@@ -79,6 +83,17 @@ const main = async () => {
 
       // Historic data
       getHistoricData(a + "/" + base).then(function(result) {
+
+        switch (selectedBuyStrategy) {
+
+
+          case buyStrategyState.MACD_MA:
+            break;
+
+          case buyStrategyState.ADX_MA:
+            break;
+
+        }
 
         // Determine market trend
         var marketTrend = determineMarketTrend(result, m);
@@ -402,3 +417,4 @@ function calculateRoC(market) {
 
 startApp();
 main();
+setInterval(main, unixTimeToLookBack[timeWindow]);
