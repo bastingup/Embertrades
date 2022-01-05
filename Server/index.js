@@ -1,5 +1,3 @@
-
-
 // #region IMPORTS
 // CONNECTIONS
 import {default as axios} from "axios";
@@ -8,56 +6,49 @@ import {default as fs} from "fs";
 // DB & BACKEND
 import {default as Datastore} from 'nedb'
 
-// FRONT END
-import express from 'express';
-
 // EXCHANGE CLIENT & SIGNALS
-import {getBinanceClient} from './src/binance.js';
-import {SMA, ROC, ADX, MACD, EMA, StochasticOscillator} from 'trading-signals'; // https://github.com/bennycode/trading-signals
+import {client} from './src/binance.js';
+import {getROCResult, getSTOCHResult, getMAResult, getMACDResult} from './src/indicators.js'
+
+import {app} from "./src/appAndApi.js"
+
+import {downloadImage, loadIconFromLocalFolder} from "./src/imageLoader.js"
+
+import {
+        binancebaseUrl,
+        debug,
+        timeWindow,
+        unixTimeToLookBack,
+        stepsBackInTime,
+        minimalProfitPercent,
+        minimalProfitBUSD,
+        minimumBUSD,
+        iconEndpoint
+        } from "./src/config.js"
 // #endregion
 
 // #region FIELDS
-
-const app = express();
-const client = getBinanceClient();
-
-// Config
-const debug = false;
-var timeWindow = "6h";
-const unixTimeToLookBack = {
-  "6h" : 21600000,
-  "4h" : 14400000,
-  "2h" : 7200000,
-  "1h" : 3600000,
-  "30m" : 1800000,
-  "15m" : 900000,
-  "10m" : 600000,
-  "5m" : 300000
-}
-const binancebaseUrl = 'https://api.binance.com/api/v3/ticker/price?symbol=';
-const stepsBackInTime = 180;
-
-var minimalProfitPercent = 0.01;
-var minimalProfitBUSD = 0.06;
+let db = null;
 
 // Technical indicator settings
 const movingAverageShortterm = 10;
 const movingAverageLongterm = 40;
 const adxInterval = 10;
 const adxThreshold = 27;
-const macdInterval = [8, 18, 12];
+
 const oversoldLimit = 20
 const overboughtLimit = 80
-const allocation = 0.6;    
+const allocation = 1;    
 
 // Markets
 let busdMarkets = [];
-const assets = ["SOL", "ETH", "DOT", "ADA", "SOL", "YGG", "LINK", "BNB", "DAR", "BTC", "DOGE", "SHIB", "TRX", "XLM", "CHZ", "IOTA", "ETC"]
+const assets = ["SOL", "ETH", "DOT", "ADA", "YGG", "LINK", "BNB", "DAR", "BTC", "DOGE", "SHIB", "TRX", "XLM", "CHZ", "IOTA", "ETC"]
+//const assets =  ["DOT", "TRX", "XLM", "IOTA"]
 //const assets = ["DOT"]
 const base = "BUSD"
 
 // Global database variable
-let db = null;
+
 
 // Market enum
 const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
@@ -68,21 +59,17 @@ const buyStrategyState = {"GOLDENCROSS": "GOLDENCROSS"
                          ,"ADX_MA": "ADX_MA"
                          ,"MACD_TURN": "MACD_TURN"
                          ,"MACD_STOCH": "MACD_STOCH"}
+
 let selectedBuyStrategy = buyStrategyState.MACD_STOCH;
 
 const sellStrategyState = {"MASHORT_ABOVE_MALONG_ROC_ZERO": "MASHORT_ABOVE_MALONG_ROC_ZERO"
                           ,"PRICE_X_ABOVE_BUY_PRICE": "PRICE_X_ABOVE_BUY_PRICE"
                           ,"DYNAMIC_STOP": "DYNAMIC_STOP"}
-let strategyPerAsset = {}
 // #endregion
-
-// #region API
-app.post('/api/binanceClient', getBinanceClient);
-
-// #endregion
-
 
 const main = async () => {
+
+  const runDate = Date.now()
 
   fetchBalances().then(function(balances) {
     const amountOfFreeBaseForAsset = balances[base].free / assets.length * 0.99
@@ -96,15 +83,16 @@ const main = async () => {
       const m = a + "/" + base
 
       // Historic data
-      getHistoricData(a + "/" + base).then(function(result) {
+      getHistoricData(a + "/" + base).then(function(historicDataOfMarket) {
 
         var closes, closesPast, movingAverageShort, marketTrend, movingAverageLong, currentRoc, lastRoc = null;
         
         switch (selectedBuyStrategy) {
           case buyStrategyState.MACD_STOCH:
-            getCurrentPrice(m).then(function(currentPrice) {
+            getCurrentPrice(m).then(function(currentPriceOfAsset) {
             
-              closes = extractOHLCFromData(result[0], 4)
+              closes = extractOHLCFromData(historicDataOfMarket[0], 4)
+
               // 1. Longterm trend positive
               const roc = getROCResult(closes, 100).getResult().toFixed(4)
               console.log("ROC 100", roc)
@@ -112,99 +100,126 @@ const main = async () => {
                 console.log("ROC 100 bigger than 0")
               }
 
-              // 2. Oversold, in the recent past
-              const stochLookback = 12;
-              var oversold = false;
-              for (var i = 1; i < stochLookback + 1; i++) {
-                if (getSTOCHResult(buildCandles(result[0].slice(0, -i))).k.toFixed(2) < oversoldLimit) {
-                  oversold = true;
-                }
+              // 2. MACD Signals
+              console.log("Oversold in the recent past.")
+              const macdResult = getMACDResult(closes);     
+              const macdHistogram = macdResult.histogram.toFixed(4);
+              const macdResultPast = getMACDResult(closes.slice(0, -1));     
+              const macdHistogramPast = macdResultPast.histogram.toFixed(4);
+              const crossing = (detectCrossing(macdHistogramPast, macdHistogram))
+
+              var signalDoc = {
+                "timestamp" : Date.now(),
+                "asset" : m,
+                "signal" : "",
+                "price" : currentPriceOfAsset,
+                "roc100" : roc
               }
-              if (oversold) {
-                
-                // 3. MACD Signals
-                console.log("Oversold in the recent past.")
-                const macdResult = getMACDResult(closes);     
-                const macdHistogram = macdResult.histogram.toFixed(4);
-                const macdResultPast = getMACDResult(closes.slice(0, -1));     
-                const macdHistogramPast = macdResultPast.histogram.toFixed(4);
-                const crossing = (detectCrossing(macdHistogramPast, macdHistogram))
 
-                var signalDoc = {
-                  "timestamp" : Date.now(),
-                  "asset" : m,
-                  "signal" : "",
-                  "price" : currentPrice,
-                  "roc100" : roc
+              if (crossing == macdState.CROSSED_TO_POSITIVE) {
+                // 3. Oversold, in the recent past
+                const stochLookback = 12;
+                var oversold = false;
+                var stepsSinceOverbought = 0;
+                var stepsSinceOversold = 0;
+                const candles = buildCandles(historicDataOfMarket[0])
+
+                oversoldLoop:
+                for (var i = 1; i < stochLookback + 1; i++) {
+                  if (getSTOCHResult(candles.slice(0, -i)).k.toFixed(2) < oversoldLimit) {
+                    oversold = true;
+                    stepsSinceOversold = i
+                    break oversoldLoop;
+                  }
                 }
 
-                if (crossing == macdState.CROSSED_TO_POSITIVE) {
-                  console.log("\u001B[31mBUY BUY BUY FOR MACD", m, "at", currentPrice)
-                  console.log("Minimal Profit for buying at price", currentPrice, "is", calculateMinimalProfit(currentPrice))
+                overboughtLoop:
+                for (var i = 1; i < stochLookback + 1; i++) {
+                  if (getSTOCHResult(candles.slice(0, -i)).k.toFixed(2) > overboughtLimit) {
+                    stepsSinceOverbought = i
+                    break overboughtLoop;
+                  }
+                }
+
+                if (oversold & !overboughtBeforeOversold(stepsSinceOverbought, stepsSinceOversold)) {
+                  console.log("\u001B[31mBUY BUY BUY FOR MACD", m, "at", currentPriceOfAsset)
+                  console.log("Minimal Profit for buying at price", currentPriceOfAsset, "is", calculateMinimalProfit(currentPriceOfAsset))
                   signalDoc.signal = "BUY"
 
                   db.signals.insert(signalDoc, function (err, newDoc) { });
-                  BUY(m, currentPrice, amountOfFreeBaseForAsset)
 
-                } else if (crossing == macdState.CROSSED_TO_NEGATIVE) {
-                  console.log("\u001B[31mSELL SELL SELL FOR MACD", m, "at", result[0][4])
-                  console.log("\u001B[0m")
-                  signalDoc.signal = "SELL"
-                  db.signals.insert(signalDoc, function (err, newDoc) { });
-                  lookForOpenOrdersToClose(m, currentPrice)
-
-                } else {
-                  console.log("No crossing found")
+                  if (amountOfFreeBaseForAsset > minimumBUSD) {
+                    BUY(m, currentPriceOfAsset, amountOfFreeBaseForAsset)
+                  }
                 }
-                // 4. Set dynamic stoploss limit
-                // TODO CRITICAL
+
+              } else if (crossing == macdState.CROSSED_TO_NEGATIVE) {
+                console.log("\u001B[31mSELL SELL SELL FOR MACD", m, "at", currentPriceOfAsset)
+                console.log("\u001B[0m")
+                signalDoc.signal = "SELL"
+                db.signals.insert(signalDoc, function (err, newDoc) { });
+                lookForOpenOrdersToClose(m, currentPriceOfAsset)
+
               } else {
-                console.log("No oversell in the recent past")
+                console.log("No crossing found")
               }
+              // 4. Set dynamic stoploss limit
+              // TODO CRITICAL
+              
             })
             
             break;
-
+          
         }
       })
     })
   })
 }
 
+function overboughtBeforeOversold(stepsSinceOverbought, stepsSinceOversold) {
+  if (stepsSinceOverbought === 0) {
+    console.log("NO OVERBUY")
+    return false
+  }
+  if (stepsSinceOverbought !== 0 & stepsSinceOversold !== 0) {
+    if (stepsSinceOverbought < stepsSinceOversold) {
+      console.log("OVERBOUGHT BEFORE OVERSOLD")
+      return true
+    }
+    console.log("OVERSOLD BEFORE OVERBOUGHT")
+    return false
+  }
+}
+
+async function debugLocal(result) {
+  // KEEP THIS EMPTY
+  const stochLookback = 14;
+  var oversold, overbought = false;
+  var stepsSinceOversold, stepsSinceOverbought = 0;
+  const candles = buildCandles(result[0])
 
 
-function getMACDResult(prices) {
-  const macd = new MACD({
-    indicator: EMA,
-    shortInterval: macdInterval[0],
-    longInterval: macdInterval[1],
-    signalInterval: macdInterval[2],
-  });
-  prices.forEach(p => macd.update(p));
-  return macd.getResult();
+  for (var i = 1; i < stochLookback + 1; i++) {
+      if (getSTOCHResult(candles.slice(0, -i)).k.toFixed(2) < oversoldLimit) {
+        
+        oversold = true;
+        stepsSinceOversold = i
+
+      }
+  }
+
+  for (var i = 1; i < stochLookback + 1; i++) {
+      if (getSTOCHResult(candles.slice(0, -i)).k.toFixed(2) > overboughtLimit) {
+        overbought = true;
+        stepsSinceOverbought = i
+      }
+    }
 }
 
 function createNewDatabase(localDbPath) {
   return new Datastore({ filename: localDbPath});
 }
 
-function getROCResult(prices, interval) {
-  const roc = new ROC(interval);
-  prices.forEach(p => roc.update(p));
-  return roc;
-}
-
-function getSTOCHResult(prices) {
-  const stoch = new StochasticOscillator(15, 3);
-  prices.forEach(p => stoch.update(p));
-  return stoch.getResult();
-}
-
-function getMAResult(prices, n) {
-  const ma = new SMA(n);
-  prices.forEach(p => ma.update(p));
-  return ma.getResult().toFixed(4);
-}
 
 function detectCrossing(past, now) {
   const signPast = Math.sign(past);
@@ -292,7 +307,8 @@ function createOrderForOrderbook(m, order) {
     "boughtAtPriceOf" : order.price,
     "status" : "open",
     "dynamicStop" : "NOT IMPLEMENTED",
-    "closedAt" : 0
+    "closedAt" : 0,
+    "fees" : order.fee
   }
 
   if (order.fee.currency == m.split('/')[0]) {
@@ -302,7 +318,6 @@ function createOrderForOrderbook(m, order) {
   return doc
 }
 
-
 function makeDebugOrderRealPrices(m, assetAmountToBuy, currentPrice) {
   return {
     "timestamp" : Date.now(),
@@ -311,7 +326,8 @@ function makeDebugOrderRealPrices(m, assetAmountToBuy, currentPrice) {
     "price" : currentPrice,
     "status" : "open",
     "dynamicStop" : "NOT IMPLEMENTED",
-    "closedAt" : 0
+    "closedAt" : 0,
+    "fee" : {"cost" : 0.05, "currency" : "BUSD"}
   }
 }
 
@@ -327,8 +343,9 @@ function lookForOpenOrdersToClose(m, currentPrice) {
         const minimalSalesPrice = doc.boughtAtPriceOf + (doc.boughtAtPriceOf * minimalProfitPercent)
         if (potentialProfit > 0 & currentPrice > minimalSalesPrice) {
           console.log("Profitable position in orderbook detected. Selling position now:", doc.assetAmount, "of market", m)
-
           SELL(doc)
+
+          // Else if stoploss sell
 
         } else {
           console.log("Position not profitable yet")
@@ -346,6 +363,34 @@ async function SELL(doc) {
       console.log(order)
     })
   })
+}
+
+function prepareMarketDatabaseAndMAIN() {
+
+  db.markets.count({}, function (err, marketsInDb) {
+
+    if (marketsInDb == 0) {
+      getAllMarkets().then(function(allMarkets) {
+
+        const busdMarketsOnBinance = createBUSDMarkets(allMarkets)
+        const timestampForMarketDb = Date.now()
+
+        busdMarketsOnBinance.forEach(function(busdMarket) {
+
+          db.markets.insert({
+            "updatedAt" : timestampForMarketDb,
+            "asset" : busdMarket,
+            "status" : "inserted"
+          }, function (err, newDoc) { 
+          });
+        })
+      })
+    }
+
+    main();
+    setInterval(main, unixTimeToLookBack[timeWindow]);
+
+  });
 }
 
 function determineMarketTrendADX(result, m) {
@@ -388,6 +433,10 @@ function setUpDatabase() {
   // Misc, config and history
   db.signals = new Datastore('./db/signals.db');
   db.signals.loadDatabase();
+
+  // Db for tracking markets
+  db.markets = new Datastore('./db/markets.db');
+  db.markets.loadDatabase();
 
   // Count all documents in the datastore
   db.orderbook.count({}, function (err, count) {
@@ -465,7 +514,7 @@ async function getAllMarkets() {
 
 function createBUSDMarkets(markets) {
   var busdm = [];
-  for (const [ord, vals] of Object.entries(markets)) {
+  for (const [ord, vals] of Object.entries(markets[0])) {
     if (vals.quote.includes("BUSD")) {
       busdm.push(vals.base)
     }
@@ -493,6 +542,30 @@ function calculateMinimalProfit(price) {
 
 setUpDatabase();
 startApp();
-
 main();
 setInterval(main, unixTimeToLookBack[timeWindow]);
+
+// MAIN 
+//prepareMarketDatabaseAndMAIN();
+
+
+
+/*
+
+            checkFileExists(newDoc.asset + ".png").then(function(result) {
+              if (result == false) {
+                console.log("Downloading image for", newDoc.asset)
+                try {
+
+                  const urlToIcon = iconEndpoint + newDoc.asset.toLowerCase() + "_.png";
+                  console.log(urlToIcon)
+                  downloadImage(urlToIcon, "./icons/" + newDoc.asset + ".png");
+
+                  db.markets.update(newDoc, { $set: { iconStatus : 'ICON', path : newDoc.asset + ".png"} }, {}, function (err, numReplaced) {})
+
+                } catch (e) {console.log("No icon found... Moving on")}
+              }
+            })
+
+
+*/

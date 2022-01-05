@@ -1,0 +1,76 @@
+.App {
+  text-align: center;
+  margin: 1%;
+}
+
+.headerLogo {
+  text-align: left;
+  color: whitesmoke;
+  font-size: 4vw;
+  font-style:normal;
+  font-weight: bolder;
+}
+
+.layout {
+  background-color: black;
+  width: 100%;
+}
+
+.layoutElement {
+  background-color: grey;
+  
+}
+
+.layoutElementText {
+  text-align: center;
+  color: whitesmoke;
+
+}
+
+.emberPrimaryColor {
+  color: orange;
+}
+
+.emberSecondaryolor {
+  color: #61dafb;
+}
+
+.emberBigFont {
+  font-size: 1.8vw;
+  font-weight: bolder;
+  margin: auto;
+}
+
+.appWrapper {
+  background-color: black;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
