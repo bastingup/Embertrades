@@ -5,3 +5,4 @@ The Embertrades backend, written as NodeJS is capable of utilizing a variety of 
 The software is connected to Binance via its API. Front- and backend communicate via API.
 
 All index files are for development purposes, the main files are the actual core files.
+The project is still under early development. Todos are seperating the main into respective classes, getting rid of the huge amount of global variables and connecting it to the frontend for proper usage.
