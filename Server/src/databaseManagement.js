@@ -1,4 +1,5 @@
 import {default as Datastore} from 'nedb'
+import * as server from "./server.js"
 
 export let db = null
 
@@ -23,6 +24,17 @@ export function setUpDatabase() {
     // Db for tracking markets
     db.markets = new Datastore('./db/markets.db');
     db.markets.loadDatabase();
+
+    // Backtest Signals
+    db.backtestSignals = new Datastore('./db/backtestSignals.db');
+    db.backtestSignals.loadDatabase(function (err) {
+        console.log("\u001B[35mEmitting event: loaded-backtest-signals.");    
+        server.eventBus.emit("loaded-backtest-signals")
+      });
+
+    // Backtest Signals
+    db.livetestOrderbook = new Datastore('./db/livetestOrderbook.db');
+    db.livetestOrderbook.loadDatabase();
 
     // Count all documents in the datastore
     db.orderbook.count({}, function (err, count) {

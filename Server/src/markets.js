@@ -6,7 +6,6 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 export const binanceClient = getBinanceClient();
-export const cryptoBaseAsset = "BUSD"
 let busdMarkets = [];
 
 export function getBinanceClient() {
@@ -14,16 +13,40 @@ export function getBinanceClient() {
         apiKey: process.env.API_KEY,
         secret: process.env.API_SECRET,
         enableRateLimit: true,
+        adjustForTimeDifference: true
     });
 }
 
-app.post('/api/markets/getAllBusdMarkets', function getAllBusdMarkets(req, res) {
-    getAllMarkets().then(function(allMarkets) {
-        const busdMarketsOnBinance = createBUSDMarkets(allMarkets);
-        res.send("Length of markets:" + busdMarketsOnBinance.length);
-        eventBus.emit("got-all-busd-markets");
+export function extractOHLCFromData(data, f) {
+  // Close = 4
+  var close = [];
+  for (var i = 0; i < data.length; i++) {
+    close.push(data[i][f]);
+  }
+  return close;
+}
+
+
+export function buildCandles(data) {
+  var candles = [];
+  for (var i = 0; i < data.length; i++) {
+    candles.push({
+      "close" : data[i][4],
+      "high" : data[i][2],
+      "low" : data[i][3]
     })
-});
+  }
+  return candles;
+}
+
+export function getAllBusdMarkets() {
+  getAllMarkets().then(function(allMarkets) {
+    const busdMarketsOnBinance = createBUSDMarkets(allMarkets);
+    res.send("Length of markets:" + busdMarketsOnBinance.length);
+    eventBus.emit("got-all-busd-markets");
+    return busdMarketsOnBinance;
+  })
+}
 
 app.post('/api/account/fetchBalances', async function fetchBalances(req, res) {
     var balances = null;
@@ -38,19 +61,16 @@ app.post('/api/account/fetchBalances', async function fetchBalances(req, res) {
         res.send(balances);
     }
 });
-
-app.post('/api/markets/getHistoricData', async function getHistoricData(req, res) {
-  console.log(req.body)
-    try {
-        var since = (Date.now() - (config.unixTimeToLookBack[config.timeWindow]) * config.stepsBackInTime);
-        var r = await Promise.all([
-          binanceClient.fetch_ohlcv(market, config.timeWindow, since = since)
-        ]);
-        res.send(r)
-      } catch (e) {
-        console.log(e)}
-});
-
+ 
+export async function getHistoricData(market) {
+  try {
+    var since = (Date.now() - ((config.unixTimeToLookBack[config.timeWindow]) * config.stepsBackInTime));
+    return await Promise.all([
+      binanceClient.fetch_ohlcv(market, config.timeWindow, since = since)
+    ]);
+  } catch (e) {
+    console.log(e)}
+}
 
 function createBUSDMarkets(markets) {
     var busdm = [];
