@@ -124,7 +124,6 @@ export function atLeastAreDecisions(decisions, condition) {
     if (condition == decisionMadeWithIndicators.SELL) {
       ratioThreshold = config.atLeastRatioForSell
     }
-
     
 
     if (retObj.ratio >= ratioThreshold) {

@@ -5,32 +5,27 @@ import * as indicators from './indicators.js'
 export var decisionSettings = {
   "BEAR" : {
     "BUY" : [
-      indicators.indicatorForDecision.STOCH_NOW_SIMPLE,
-      indicators.indicatorForDecision.GOLDEN_CROSS
+      indicators.indicatorForDecision.STOCH_NOW_SIMPLE
     ],
     "SELL" : [
-      indicators.indicatorForDecision.GOLDEN_CROSS,
-      indicators.indicatorForDecision.MACD
+      indicators.indicatorForDecision.JUST_SELL
     ]
   },
   "BULL" : {
     "BUY" : [
-      indicators.indicatorForDecision.GOLDEN_CROSS,
-      indicators.indicatorForDecision.STOCH_NOW_SIMPLE,
-      indicators.indicatorForDecision.MACD_MEDIAN
+      indicators.indicatorForDecision.STOCH_NOW_SIMPLE
     ],
     "SELL" : [
-      indicators.indicatorForDecision.GOLDEN_CROSS,
-      indicators.indicatorForDecision.MACD
+      indicators.indicatorForDecision.MACD,
+      indicators.indicatorForDecision.STOCH_NOW_SIMPLE
     ]
   },
   "RANGE" : {
     "BUY" : [
-      indicators.indicatorForDecision.GOLDEN_CROSS,
       indicators.indicatorForDecision.STOCH_NOW_SIMPLE
     ],
     "SELL" : [
-      indicators.indicatorForDecision.GOLDEN_CROSS
+      indicators.indicatorForDecision.JUST_SELL
     ]
   },
   "UNKNOWN" : {
@@ -93,14 +88,14 @@ export const marketDataModes = {"Download": "Download"
 export const marketDataMode = softwareModes.Download;
 */
 
-export const atLeastRatioForBuy = 0.01;
-export const atLeastRatioForSell = 0.01;
+export const atLeastRatioForBuy = 0.001;
+export const atLeastRatioForSell = 0.001;
 export const nonOptionalBuy = -1;
 export const nonOptionalSell = -1;
 
 export const binanceFee = 0.001;
 export const stoplossPercentage = 0.05;
-export const atrStoplossMultiplicator = 3;
+export const atrStoplossMultiplicator = 1;
 export let atrProfitMultiplier = 2;
 export const minimumProfitPercentage = 0.03;
 export const minimalProfitBUSD = 0.04; // Absolute minimum for fees, not implemented yet
@@ -114,18 +109,18 @@ export const minimumBUSDForTrade = 15;
 export const numberOfClosesForATH = 12;
 export var bearBrake = true;
 
-export var timeWindow = "15m";
+export var timeWindow = "1h";
 export const cryptoBaseAsset = "BUSD"
 export const shareOnTrends = {
-  "BULL" : 0.4,
-  "BEAR" : 0.4,
-  "RANGE" : 0.2,
+  "BULL" : 0.1,
+  "BEAR" : 0.2,
+  "RANGE" : 0.1,
   "UNKNOWN" : 0
 }
 
 // Indicator Fields
 export var periodK = 14;
-export var periodD = 3;
+export var periodD = 5;
 export var rocInterval = 12;
 export var macdInterval = [5, 35, 5];
 export const stochLookback = 3;
@@ -142,7 +137,7 @@ export const minimumIndex = 100
 export const minimumNumberOfPoints = 49
 
 // Wallets
-export let availableBacktestBUSD = 2000;
+export let availableBacktestBUSD = 1000;
 export let backtestWallet = {"BUSD" : availableBacktestBUSD}
 export let holdWallet = {"BUSD" : availableBacktestBUSD}
 

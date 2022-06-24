@@ -27,10 +27,10 @@ import * as brain from "./src/brain.js"
 
 // #region FIELDS
 // TODO get latest ATR for each market and only trade on the markets that have a relatilely high ATR on average in the recent past
-const cryptoAssets =  ["ETH", "BTC", "BNB", "AAVE", "IOTA", "XRP", "DOT", "ETC", "LINK", "ADA", "SHIB", "MANA", "BAT"]
+const cryptoAssets =  ["ETH", "BTC", "BNB", "AAVE", "IOTA", "XRP", "DOT", "ETC", "LINK", "ADA"]
 //const cryptoAssets = ["DOT"]
 // Favs: DOT, MANA, LINK, AAVE
-var selectedAssets = ["XRP", "DOT", "BNB"]
+var selectedAssets = ["BNB", "ETH", "BTC"]
 var combinationsOfCryptos = undefined
 
 let assetCounter = 0
@@ -450,7 +450,7 @@ function decideOnTrading(signal, consider, otherSignalInfo) {
 
             // STOCH Decision
             case indicators.indicatorForDecision.STOCH_NOW_SIMPLE:
-                if (signal["SIGNAL_STOCH"][4] === true & otherSignalInfo.lastStochBuyStepsAgo >= config.minimumStepsTillNextStochBuy) 
+                if (signal["SIGNAL_STOCH"][4] == true) 
                     collectedBuyDecisions.push(indicators.decisionMadeWithIndicators.BUY);
                 else 
                     collectedBuyDecisions.push(indicators.decisionMadeWithIndicators.NOTHING);
@@ -512,7 +512,7 @@ function decideOnTrading(signal, consider, otherSignalInfo) {
 
             // STOCH Decision 2
             case indicators.indicatorForDecision.STOCH_RECENT_PAST:
-                if (signal["SIGNAL_STOCH"][0] === true & otherSignalInfo.lastStochBuyStepsAgo >= config.minimumStepsTillNextStochBuy) {
+                if (signal["SIGNAL_STOCH"][0] == true & otherSignalInfo.lastStochBuyStepsAgo >= config.minimumStepsTillNextStochBuy) {
                     collectedBuyDecisions.push(indicators.decisionMadeWithIndicators.BUY);
                 }
                 else {
@@ -576,7 +576,7 @@ function decideOnTrading(signal, consider, otherSignalInfo) {
 
         // STOCH Decision
         case indicators.indicatorForDecision.STOCH_NOW_SIMPLE:
-            if (signal["SIGNAL_STOCH"][5] === true) {
+            if (signal["SIGNAL_STOCH"][5] == true) {
                 collectedSellDecisions.push(indicators.decisionMadeWithIndicators.SELL);
             } else {
                 collectedSellDecisions.push(indicators.decisionMadeWithIndicators.NOTHING);
@@ -585,7 +585,7 @@ function decideOnTrading(signal, consider, otherSignalInfo) {
 
         // STOCH Decision 2
         case indicators.indicatorForDecision.STOCH_RECENT_PAST:
-            if (signal["SIGNAL_STOCH"][1] === true) {
+            if (signal["SIGNAL_STOCH"][1] == true) {
                 collectedSellDecisions.push(indicators.decisionMadeWithIndicators.SELL);
             }
             else {
