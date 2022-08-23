@@ -5,7 +5,7 @@ import * as indicators from './indicators.js'
 export var decisionSettings = {
   "BEAR" : {
     "BUY" : [
-      indicators.indicatorForDecision.STOCH_NOW_SIMPLE
+      indicators.indicatorForDecision.MACD_MEDIAN
     ],
     "SELL" : [
       indicators.indicatorForDecision.JUST_SELL
@@ -16,8 +16,7 @@ export var decisionSettings = {
       indicators.indicatorForDecision.STOCH_NOW_SIMPLE
     ],
     "SELL" : [
-      indicators.indicatorForDecision.MACD,
-      indicators.indicatorForDecision.STOCH_NOW_SIMPLE
+      indicators.indicatorForDecision.MACD
     ]
   },
   "RANGE" : {
@@ -68,9 +67,11 @@ export const softwareModes = {
                             
                               // Only calls dev function
                               // TODO
-                              "Dev" : "Dev"
+                              "Dev" : "Dev",
+
+                              "FrontendDev" : "FrontendDev"
                             };
-export const softwareMode = softwareModes.Test;
+export const softwareMode = softwareModes.FrontendDev;
 
 export const stoplossModes = {"HARD" : "HARD",
                               "TRAILING_HARD" : "TRAILING_HARD",
@@ -95,8 +96,8 @@ export const nonOptionalSell = -1;
 
 export const binanceFee = 0.001;
 export const stoplossPercentage = 0.05;
-export const atrStoplossMultiplicator = 1;
-export let atrProfitMultiplier = 2;
+export const atrStoplossMultiplicator = 100;
+export let atrProfitMultiplier = 3;
 export const minimumProfitPercentage = 0.03;
 export const minimalProfitBUSD = 0.04; // Absolute minimum for fees, not implemented yet
 
@@ -109,7 +110,7 @@ export const minimumBUSDForTrade = 15;
 export const numberOfClosesForATH = 12;
 export var bearBrake = true;
 
-export var timeWindow = "1h";
+export var timeWindow = "4h";
 export const cryptoBaseAsset = "BUSD"
 export const shareOnTrends = {
   "BULL" : 0.1,

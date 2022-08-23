@@ -24,3 +24,7 @@ export function countBacktests() {
 export function getGridsearchResults() {
     return backtestResults
 }
+
+export function mainEventCallback() {
+    console.log("\u001B[35mEmitted event: finished-main-function. Main function ran through.")
+}
