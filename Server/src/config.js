@@ -69,6 +69,7 @@ export const softwareModes = {
                               // TODO
                               "Dev" : "Dev",
 
+                          
                               "FrontendDev" : "FrontendDev"
                             };
 export const softwareMode = softwareModes.FrontendDev;

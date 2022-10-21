@@ -16,23 +16,12 @@
   width: 100%;
 }
 
-.layoutElement {
-  background-color: grey;
-  
-}
-
-.layoutElementText {
-  text-align: center;
-  color: whitesmoke;
-
-}
-
 .emberPrimaryColor {
-  color: orange;
+   color: orange !important;
 }
 
 .emberSecondaryolor {
-  color: #61dafb;
+  color: #61dafb !important;;
 }
 
 .emberBigFont {

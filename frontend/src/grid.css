@@ -1,0 +1,10 @@
+.layoutElement {
+    background-color: transparent;
+    border : 1px solid grey;
+}
+
+.layoutElementText {
+    text-align: center;
+    color: whitesmoke;
+}
+

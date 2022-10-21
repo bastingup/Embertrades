@@ -1,8 +1,11 @@
 import React from 'react';
+import "./grid.css"
+import "./App.css"
 import GridLayout from 'react-grid-layout';
 import "/node_modules/react-grid-layout/css/styles.css"
 import "/node_modules/react-resizable/css/styles.css"
 import { WholeView } from "./tradingviews";
+
 
 class GridStructure extends React.Component {
     render() { 
@@ -25,14 +28,16 @@ class GridStructure extends React.Component {
         return (
             <GridLayout className="layout" layout={layout} cols={12} rowHeight={30} width={1400}>
                 
-                <div className='layoutElement' key="b1">
-                <p className='layoutElementText emberPrimaryColor'>Buy Signals:</p>
+                <div className='layoutElement gridElement' key="b1">
+                    <p className='layoutElementText emberSecondaryolor'>Buy Signals:</p>
                     <p className='layoutElementText emberBigFont'>12</p>
                 </div>
-                <div className='layoutElement' key="b2">
-                    <p className='layoutElementText emberSecondaryolor'>Sell Signals:</p>
+
+                <div className='layoutElement gridElement' key="b2">
+                    <p className='layoutElementText emberPrimaryColor'>Sell Signals:</p>
                     <p className='layoutElementText emberBigFont'>4</p>
                 </div>
+
                 <div className='layoutElement' key="c">b</div>
                 <div className='layoutElement' key="d">c</div>
 

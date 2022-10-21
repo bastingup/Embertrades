@@ -1,0 +1,3 @@
+echo Starting Backend...
+cd ./Server/
+node ./main.js

@@ -1,22 +1,54 @@
 import {default as ccxt} from "ccxt";
 import {app} from "./server.js"
 import * as config from "./config.js"
+import * as server from "./server.js"
 
 import dotenv from 'dotenv'
 dotenv.config()
 
-export const binanceClient = getBinanceClient();
-let busdMarkets = [];
+export var binanceClient = null
 
-export function getBinanceClient() {
-    return new ccxt.binance({
+// ----------------------------------------------
+// ------------------ API ROUTED FUNCTIONS
+// ----------------------------------------------
+
+app.post('/api/account/getBinanceClient', async function getBinanceClient(req, res) {
+  try {
+    binanceClient = new ccxt.binance({
         apiKey: process.env.API_KEY,
         secret: process.env.API_SECRET,
         enableRateLimit: true,
         adjustForTimeDifference: true
     });
-}
+      console.log("Got Binance Client");
+      res.send(true);
+      server.eventBus.emit("binance-instantiated");
+  } catch(e) {
+      console.log("\u001b[0;36mCould not instantiate client properly")
+      console.log(e)
+      res.send(false);
+  }
+});
 
+app.post('/api/account/fetchBalances', async function fetchBalances(req, res) {
+  var balances = null;
+  try {
+      balances = await binanceClient.fetchBalance();
+      console.log("Fetched balances");
+      res.send(balances);
+      eventBus.emit("binance-fetched-balances");
+  } catch(e) {
+      console.log("\u001b[0;36mCould not fetch available balances")
+      console.log(e)
+      res.send(balances);
+  }
+});
+
+// ----------------------------------------------
+// -------///-------- API ROUTED FUNCTIONS
+// ----------------------------------------------
+
+//#region LEGACY CODE - not API posted
 export function extractOHLCFromData(data, f) {
   // Close = 4
   var close = [];
@@ -48,19 +80,7 @@ export function getAllBusdMarkets() {
   })
 }
 
-app.post('/api/account/fetchBalances', async function fetchBalances(req, res) {
-    var balances = null;
-    try {
-        balances = await binanceClient.fetchBalance();
-        console.log("Fetched balances");
-        res.send(balances);
-        eventBus.emit("fetched-balances");
-    } catch(e) {
-        console.log("\u001b[0;36mCould not fetch available balances")
-        console.log(e)
-        res.send(balances);
-    }
-});
+
  
 export async function getHistoricData(market) {
   try {
@@ -93,3 +113,5 @@ async function getAllMarkets() {
       console.log(e)
     }
 }
+
+//#endregion

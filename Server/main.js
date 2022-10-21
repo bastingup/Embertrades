@@ -10,7 +10,6 @@
 
 */
 
-
 // #region IMPORTS
 // Module imports
 import {default as fs} from "fs";
@@ -19,11 +18,13 @@ import {default as fs} from "fs";
 import * as markets from './src/markets.js';
 import * as indicators from './src/indicators.js'
 import {downloadImage, loadIconFromLocalFolder} from "./src/imageLoader.js"
-import * as debug from "./debug,js"
+//import * as debug from "./debug.js"
 import * as dbmanagement from "./src/databaseManagement.js"
 import * as server from "./src/server.js"
 import * as config from "./src/config.js"
 import * as brain from "./src/brain.js"
+
+
 // #endregion
 
 // -------------- DEBUG
@@ -48,13 +49,5 @@ function main() {
     server.eventBus.emit("finished-main-function")
 
 }
-
-app.post('/api/main/mainDebug', async function mainDebug(req, res, next) {
-    const r = "I AM ALIVE!";
-
-    try {
-        res.send(r);
-    } catch(e) {}
-});
 
 main();
