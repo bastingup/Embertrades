@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import axios from "axios";
+import {buildBalanceObject} from './balances.js'
+import './grid.js'
 
 class DebugButton extends Component {
 
@@ -20,15 +22,12 @@ class DebugButton extends Component {
     }
 }
 
-class ConnectToBackend extends Component {
+class PingBackend extends Component {
 
-    // TODO
     handleClick = () => {
-        
         axios.post(`http://127.0.0.1:3001/api/server/alive`)
         .then(res => {
             console.log(res);
-           // if ()
 
             if (res.status == 200) {
                 console.log(res.status + " - Backend is alive.")
@@ -43,23 +42,22 @@ class ConnectToBackend extends Component {
     render() {
         return (
             <div>
-                <button onClick={this.handleClick}>Connect to Backend</button>
+                <button onClick={this.handleClick}>Ping Backend</button>
             </div>
         );
     }
 }
 
-
 class GetBinanceClient extends Component {
 
     handleClick = () => {
-
         axios.post(`http://127.0.0.1:3001/api/account/getBinanceClient`)
         .then(res => {
             console.log(res);
-            console.log(res.data);
+            if (res.data == true) {
+                console.log("SUCCESS! Binance client instantiated.")
+            }
         })
-        
     };
 
     render() {
@@ -69,4 +67,23 @@ class GetBinanceClient extends Component {
     }
 }
 
-export default {DebugButton, ConnectToBackend, GetBinanceClient};
+class FetchBalances extends Component {
+
+    handleClick = () => {
+        axios.post(`http://127.0.0.1:3001/api/account/fetchBalances`)
+        .then(res => {
+
+            const balances = buildBalanceObject(res)
+            console.log(balances)
+        }
+    )
+};
+
+    render() {
+        return (
+            <div> <button onClick={this.handleClick}>Fetch Balances</button> </div>
+        );
+    }
+}
+
+export default {DebugButton, PingBackend, GetBinanceClient, FetchBalances};

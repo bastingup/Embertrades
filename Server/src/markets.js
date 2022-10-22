@@ -33,14 +33,14 @@ app.post('/api/account/getBinanceClient', async function getBinanceClient(req, r
 app.post('/api/account/fetchBalances', async function fetchBalances(req, res) {
   var balances = null;
   try {
-      balances = await binanceClient.fetchBalance();
+      balances = await binanceClient.fetchBalance()
       console.log("Fetched balances");
       res.send(balances);
-      eventBus.emit("binance-fetched-balances");
+      server.eventBus.emit("binance-fetched-balances");
   } catch(e) {
       console.log("\u001b[0;36mCould not fetch available balances")
       console.log(e)
-      res.send(balances);
+      res.send(e);
   }
 });
 

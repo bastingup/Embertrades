@@ -14,9 +14,6 @@ import "/node_modules/react-resizable/css/styles.css"
 import {useState} from 'react';
 import {allStates} from './legalStates.js';
 
-// Buttons
-import Buttons from './buttons';
-
 // --------------------------------------------------
 // ------------------------- GLOBAL OPTIONS FOR DEBUGGING
 // --------------------------------------------------
@@ -27,7 +24,7 @@ import Buttons from './buttons';
 // --------------------------------------------------
 function App() {
 
-  const [appState, setAppState] = useState(allStates.states.DEBUG);
+  const [appState, setAppState] = useState(allStates.states.MAINAPP);
   console.log(appState);
 
   switch(appState) {
@@ -54,9 +51,6 @@ function App() {
       return (
         <div className="App">
           <Head />
-          <Buttons.DebugButton />
-          <Buttons.GetBinanceClient />
-          <Buttons.ConnectToBackend />
         </div>
       );
 

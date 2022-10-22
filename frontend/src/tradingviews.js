@@ -58,7 +58,7 @@ class TapeView extends React.Component {
 class WholeView extends React.Component {
     render() { 
         return (<div>
-            <AdvancedRealTimeChart theme="dark" autosize></AdvancedRealTimeChart>
+            <AdvancedRealTimeChart theme='dark' symbol='ethBUSD' height={520} width={1380} style="1"></AdvancedRealTimeChart>
         </div>);
     }
 }
