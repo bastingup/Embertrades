@@ -74,6 +74,7 @@ class FetchBalances extends Component {
         .then(res => {
 
             const balances = buildBalanceObject(res)
+            console.log(res)
             console.log(balances)
         }
     )

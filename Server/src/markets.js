@@ -2,12 +2,79 @@ import {default as ccxt} from "ccxt";
 import {app} from "./server.js"
 import * as config from "./config.js"
 import * as server from "./server.js"
-
+import * as dbmanagement from "./databaseManagement.js"
 import dotenv from 'dotenv'
 dotenv.config()
 
+// Client
 export var binanceClient = null
 
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------- BACKEND SOLO ---------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
+export function instantiateBinanceClient() {
+  try {
+    binanceClient = new ccxt.binance({
+        apiKey: process.env.API_KEY,
+        secret: process.env.API_SECRET,
+        enableRateLimit: true,
+        adjustForTimeDifference: true
+    });
+      console.log("Got Binance Client");
+      server.eventBus.emit("binance-instantiated");
+  } catch(e) {
+      console.log("\u001b[0;36mCould not instantiate client properly")
+      console.log(e)
+  }
+}
+
+export async function getHistoricData(configData, i) {
+  // Build market for asset at index
+  const market = configData.trading.markets[i] + "/BUSD"
+  try {
+    var since = (Date.now() - ((configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]) * configData.trading.stepsInTime));
+    return await Promise.all([
+      binanceClient.fetch_ohlcv(market, configData.trading.timeStepSize, since = since)
+    ]);
+  } catch (e) {
+    console.log(e)}
+}
+
+export async function getMarketDataAndWriteToDB(configData, i) {
+  const data = await getHistoricData(configData, i)
+  server.eventBus.emit("got-market-data", null, configData, configData.trading.markets[i], data)
+  /*
+  let newDocs = []
+  for (let j = 0; j < data[0].length; j++) {
+    var doc = {
+      timestamp: data[0][j][0],
+      asset : configData.trading.markets[i],
+      open : data[0][j][1],
+      high : data[0][j][2],
+      low : data[0][j][3],
+      close : data[0][j][4]
+    };
+    newDocs.push(doc);
+  }
+
+  dbmanagement.db.markets.insert(newDocs, function (err, newDoc) { 
+    // optional callback
+    console.log("Added", data[0].length, "entries for", configData.trading.markets[i], ". Emitting event.")
+    server.eventBus.emit("got-market-data", null, configData, configData.trading.markets[i])
+  });
+  */
+}
+
+// --------------------------------------------------
+// --------------------------------------------------
+// -------------// BACKEND SOLO ---------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
+//#region Legacy
 // ----------------------------------------------
 // ------------------ API ROUTED FUNCTIONS
 // ----------------------------------------------
@@ -48,7 +115,7 @@ app.post('/api/account/fetchBalances', async function fetchBalances(req, res) {
 // -------///-------- API ROUTED FUNCTIONS
 // ----------------------------------------------
 
-//#region LEGACY CODE - not API posted
+
 export function extractOHLCFromData(data, f) {
   // Close = 4
   var close = [];
@@ -78,18 +145,6 @@ export function getAllBusdMarkets() {
     eventBus.emit("got-all-busd-markets");
     return busdMarketsOnBinance;
   })
-}
-
-
- 
-export async function getHistoricData(market) {
-  try {
-    var since = (Date.now() - ((config.unixTimeToLookBack[config.timeWindow]) * config.stepsBackInTime));
-    return await Promise.all([
-      binanceClient.fetch_ohlcv(market, config.timeWindow, since = since)
-    ]);
-  } catch (e) {
-    console.log(e)}
 }
 
 function createBUSDMarkets(markets) {

@@ -1,8 +1,68 @@
 import e from 'express';
 import {SMA, ROC, ADX, MACD, EMA, ATR, StochasticOscillator} from 'trading-signals'; // https://github.com/bennycode/trading-signals
 import * as config from './config.js';
+import * as dbmanagement from "./databaseManagement.js";
+import * as markets from './markets.js';
+
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------- BACKEND SOLO ---------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
+export function buildTradingSignals(configData, asset, data) {
+  console.log("Building technical indicators for", asset, ".")
+
+  // List of technical indicators with configs
+  const selectedSignals = configData.trading.signalsSettings
+
+  // Candles
+  let candles = markets.buildCandles(data[0]);
+  let indicatorResults = {}
+
+  // Iterate all indicators
+  for (let j = 0; j < selectedSignals.length; j++) {
+    switch (selectedSignals[j].name) {
+
+      case "STOCH" :
+        console.log("Building Stochastic Oscillator signals for", asset)
+        indicatorResults[selectedSignals[j].name] = indicatorSTOCH(selectedSignals[j], candles)
+
+    }
+  }
+
+  // PUT ALL CANDLES WITH THEIR INDICATOR RESULTS TOGETHER
+  /*
+  for (let c = 0; c < candles.length; c++) {
+    console.log(candles[c], indicatorResults.STOCH[c])
+  } */
+}
+
+// Stochastic Oscillator
+function indicatorSTOCH(conf, candles) {
+  const k = conf.signalConfig.periodK;
+  const d = conf.signalConfig.periodD;
+  const stoch = new StochasticOscillator(k, d);
+  let stochResults = []
+  for (const candle of candles) {
+    const stochResult = stoch.update(candle);
+    let result = "Unstable"
+    if (stoch.isStable && stochResult) {
+      result = stoch.getResult().k.toFixed(5)
+    }
+    stochResults.push(result)
+  }
+  return stochResults
+}
 
 
+// --------------------------------------------------
+// --------------------------------------------------
+// -------------// BACKEND SOLO ---------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
+//#region Legacy
 const movingAverageShortterm = 10;
 const movingAverageLongterm = 40;
 const adxInterval = 10;
@@ -236,3 +296,4 @@ export function getMACDResult(prices) {
     }
     return macdState.NO_CHANGE;
   }
+  //#endregion

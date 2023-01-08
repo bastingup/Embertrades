@@ -1,7 +1,30 @@
 import * as indicators from './indicators.js'
+import {default as fs} from "fs";
+
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------- BACKEND SOLO ---------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
+export function readInConfigFile() {
+  // it is not ./conf, but with src inbetween, cuz the function is called in main
+  const c = fs.readFileSync("./src/config.json");
+  const configData = JSON.parse(c);
+  return configData;
+}
+
+
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------- BACKEND SOLO ---------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
+
 
 // BACKTEST VERSION 3
-
+//#region Backend Attached
 export var decisionSettings = {
   "BEAR" : {
     "BUY" : [
@@ -174,3 +197,5 @@ export function adjustAtrMultipliers(isTrue) {
   else
     atrProfitMultiplier = 1
 }
+
+//#endregion

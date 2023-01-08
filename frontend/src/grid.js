@@ -5,9 +5,13 @@ import GridLayout from 'react-grid-layout';
 import "/node_modules/react-grid-layout/css/styles.css"
 import "/node_modules/react-resizable/css/styles.css"
 import { WholeView } from "./tradingviews";
+import Select from 'react-select';
 
 // Buttons
 import Buttons from './buttons';
+
+// Control Panel
+import RuleBuilder from './ruleBuilder';
 
 // Grid
 //import Grid from '@mui/material/Grid';
@@ -56,6 +60,7 @@ class GridStructure extends React.Component {
                     <Buttons.PingBackend />
                     <Buttons.GetBinanceClient />
                     <Buttons.FetchBalances />
+                    <Buttons.DebugButton />
                 </div>
 
                 <div className='layoutElement' key="balance" id="BalancePanel">
@@ -69,6 +74,7 @@ class GridStructure extends React.Component {
 
                 <div className='layoutElement' key="d" id="ControlPanel">
                     <p className='layoutElementText emberSmallFont'>Control Panel</p>
+                    <RuleBuilder.ruleBuilder />
                 </div>
 
                 <div className='layoutElement' key="a" id="TradingView"> <WholeView /> </div>

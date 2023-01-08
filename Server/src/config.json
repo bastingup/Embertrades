@@ -1,0 +1,47 @@
+{
+    "name" : "Embertrades",
+    "v" : 0.1,
+    "mode" : "dev",
+
+
+    "trading" : {
+        "markets" : ["ETH"],
+        "stepsInTime" : 100,
+        "timeStepSize" : "1h",
+        "stoploss" : {
+            "mode" : "ATR",
+            "value" : 4
+        },
+        "timeWindows" : {
+            "longWindow" : "2h",
+            "shortWindow" : "1h"
+        },
+        "signalsSettings" : [
+            {
+                "name" : "STOCH",
+                "signalConfig" : {
+                    "overSold" : 20,
+                    "overbought" : 80,
+                    "periodK" : 14,
+                    "periodD" : 5
+                }
+            }
+        ]
+    },
+
+
+    "tech" : {
+        "unixTimeToLookBack" : {
+            "1d" : 86400000,
+            "6h" : 21600000,
+            "4h" : 14400000,
+            "2h" : 7200000,
+            "1h" : 3600000,
+            "30m" : 1800000,
+            "15m" : 900000,
+            "10m" : 600000,
+            "5m" : 300000
+          },
+        "port" : 3001
+    }
+}
