@@ -1,53 +1,38 @@
-/*
-
-    Color Codes for console logs
-    BLUE    \u001b[0;36m    -   Server things       
-    GREEN   \u001B[32m      -   Sell
-    YELLOW  \u001B[33m      -   Buy
-    RED     \u001B[31m      -   Stop loss
-    PURPLE  \u001B[35m      -   Events emitted on bus
-    WHITE   \u001B[37m      -   General and Info
-
-*/
-
 // #region IMPORTS
-// Module imports
 import {default as fs} from "fs";
-
-// Custom imports
 import * as markets from './src/markets.js';
 import * as indicators from './src/indicators.js'
-import {downloadImage, loadIconFromLocalFolder} from "./src/imageLoader.js"
 import * as dbmanagement from "./src/databaseManagement.js"
 import * as server from "./src/server.js"
 import * as config from "./src/config.js"
 import * as brain from "./src/brain.js"
-
-
+import * as colors from "./src/colors.js"
 // #endregion
-
-// -------------- Colors
-const blueLog = "\u001B[0;36m"
-// ------------- /Colors
 
 async function main() {
 
-    // --------------------------------------------------
-    // --------------------------------------------------
-    // --------------- SET UP & CONFIG ------------------
-    // --------------------------------------------------
-    // --------------------------------------------------
 
-    // -------------- EVENT SUBSCRIPTIONS
-    // Register callback on Main
-    server.eventBus.on('finished-main-function', brain.mainEventCallback);
-    server.eventBus.on('got-market-data', indicators.buildTradingSignals);
+    // --------------------------------------------------
+    // --------------- SUBSCRIPTIONS --------------------
+    // ----- ACTUAL MAIN PART OF THE SOFTWARE LOGIC -----
+    // --------------------------------------------------
 
     // -------------- LOAD CONFIG FILE
     const configData = config.readInConfigFile()
 
-    // -------------- SET UP DB
-    dbmanagement.setUpDatabase();
+    // -------------- EVENT SUBSCRIPTIONS
+    server.eventBus.on('finished-main-function', brain.mainEventCallback);
+    server.eventBus.on('loaded-db', dbmanagement.giveFeedbackDBAlive);
+    server.eventBus.on('all-db-alive', buildMarketInformation);
+    server.eventBus.on('got-market-data', indicators.buildTradingSignals);
+    server.eventBus.on('download-market-data', markets.fetchMarketData);
+    server.eventBus.on('time-to-next-run', brain.scheduleNextRun);
+    server.eventBus.on('next-run', buildMarketInformation);
+
+    // --------------------------------------------------
+    // --------------- SET UP, CONFIG & -----------------
+    // ------------- AUTHENTICATION ---------------------
+    // --------------------------------------------------
 
     // -------------- START THE APP ON PORT
     server.startApp(configData.tech.port);
@@ -55,25 +40,42 @@ async function main() {
     // -------------- AUTHENTICATE WITH BINANCE AND CLIENT SET UP
     markets.instantiateBinanceClient();
 
+    // -------------- SET UP DB
+    dbmanagement.loadDatabase(configData);
+
 
     // --------------------------------------------------
-    // --------------------------------------------------
-    // --------------- TRADING CODE ---------------------
-    // --------------------------------------------------
+    // --------------- DEBUG CODE -----------------------
     // --------------------------------------------------
 
-    markets.getMarketDataAndWriteToDB(configData, 0)
+    // Download market data and build signals afterwards
+    //markets.getMarketDataAndWriteToDB(configData, 0)
+   
+    //markets.fetchMarketDataForAllConfiguredAssets(configData)
 
-    // --------------------------------------------------
+    
+
     // --------------------------------------------------
     // --------------- FINISH MAIN ----------------------
     // --------------------------------------------------
-    // --------------------------------------------------
 
     // -------------- FIN
-    // Emit event after main
     server.eventBus.emit("finished-main-function")
-
 }
+
+
+// --------------------------------------------------
+// --------------- DOWNLOAD MARKET DATA -------------
+// --------------- AND BUILD INDICATORS -------------
+// --------------------------------------------------
+
+async function buildMarketInformation(configData) {
+    markets.checkLastTimestampPerAsset(configData)
+}
+
+
+// --------------------------------------------------
+// --------------- CALL MAIN ------------------------
+// --------------------------------------------------
 
 main();

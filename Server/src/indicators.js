@@ -3,6 +3,8 @@ import {SMA, ROC, ADX, MACD, EMA, ATR, StochasticOscillator} from 'trading-signa
 import * as config from './config.js';
 import * as dbmanagement from "./databaseManagement.js";
 import * as markets from './markets.js';
+import * as colors from "./colors.js"
+import { stringify } from 'qs';
 
 // --------------------------------------------------
 // --------------------------------------------------
@@ -11,13 +13,14 @@ import * as markets from './markets.js';
 // --------------------------------------------------
 
 export function buildTradingSignals(configData, asset, data) {
-  console.log("Building technical indicators for", asset, ".")
 
+  console.log(colors.infoLog + "INDICATORS - Building technical indicators for", asset, ".")
+  
   // List of technical indicators with configs
   const selectedSignals = configData.trading.signalsSettings
 
   // Candles
-  let candles = markets.buildCandles(data[0]);
+  let candles = markets.buildCandlesFromDownloadedData(data[0]);
   let indicatorResults = {}
 
   // Iterate all indicators
@@ -25,18 +28,27 @@ export function buildTradingSignals(configData, asset, data) {
     switch (selectedSignals[j].name) {
 
       case "STOCH" :
-        console.log("Building Stochastic Oscillator signals for", asset)
+        console.log(colors.infoLog + "INDICATORS - Building Stochastic Oscillator signals for", asset)
         indicatorResults[selectedSignals[j].name] = indicatorSTOCH(selectedSignals[j], candles)
 
     }
   }
 
   // PUT ALL CANDLES WITH THEIR INDICATOR RESULTS TOGETHER
-  /*
   for (let c = 0; c < candles.length; c++) {
-    console.log(candles[c], indicatorResults.STOCH[c])
-  } */
+    candles[c].STOCH = parseFloat(indicatorResults.STOCH[c])
+    candles[c].timeStamp = data[0][c][0]
+    candles[c].asset = asset
+  }
+  dbmanagement.db.markets.insert(candles, function (err, newDoc) {
+    console.log(colors.dbLog + "INDICATORS - Added", candles.length.toString(), "of asset", asset.toString(), "to the markets database.")
+  });
+
+  console.log(colors.importantInfoLog + "INDICATORS - Finished building indicators for", asset)
 }
+
+// --------------- INDICATORS -----------------------
+// --------------------------------------------------
 
 // Stochastic Oscillator
 function indicatorSTOCH(conf, candles) {

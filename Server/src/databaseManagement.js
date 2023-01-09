@@ -1,9 +1,11 @@
 import {default as Datastore} from 'nedb'
 import * as server from "./server.js"
+import * as colors from "./colors.js"
 
 export let db = null
+let registeredDatabases = 0
 
-export function setUpDatabase() {
+export function loadDatabase(configData) {
 
     // Load database
     var localDbPath = './db/local.db'
@@ -11,22 +13,23 @@ export function setUpDatabase() {
 
     // Orderbook
     db.orderbook = new Datastore('./db/orderbook.db');
-    db.orderbook.loadDatabase();
-
-    // Db for tracking markets
     db.markets = new Datastore('./db/markets.db');
-    db.markets.loadDatabase();
+    db.testOrderbook = new Datastore('./db/testOrderbook.db');
 
-    // Backtest Signals
-    db.testOrderbook = new Datastore('./db/livetestOrderbook.db');
-    db.testOrderbook.loadDatabase();
-
-    // Count all documents in the datastore
-    db.orderbook.count({}, function (err, count) {
-        console.log("\u001b[0;0mLoaded orderbook database with", count, "entries");
-    });
+    db.orderbook.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
+    db.markets.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
+    db.testOrderbook.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
 }
 
-export function createNewDatabase(localDbPath) {
+export function giveFeedbackDBAlive(configData) {
+    registeredDatabases = registeredDatabases + 1
+    if (registeredDatabases === 3) {
+        server.eventBus.emit("all-db-alive", null, configData)
+        registeredDatabases = 0
+    }
+}
+
+function createNewDatabase(localDbPath) {
     return new Datastore({ filename: localDbPath});
 }
+

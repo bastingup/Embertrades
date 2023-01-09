@@ -8,6 +8,7 @@ import * as con from "./config.js"
 import * as bodyParser from "body-parser"
 import * as qs from "qs";
 import cors from 'cors';
+import * as colors from "./colors.js"
 
 // EVENT BUS
 import EventBus from 'js-event-bus';
@@ -59,9 +60,9 @@ export function startApp(port) {
 
 // LOG AND INFO
 function logServerStart(port) {
-    console.log("\u001b[0;36m__________________________________________");
-    console.log("\u001b[0;36mApp started and listening on Port:", port)
-    console.log("\u001b[0;36mStarting software in mode: " + con.softwareMode)
-    console.log("\u001b[0;36mStarting Server at:", new Date(Date.now()));
-    console.log("\u001b[0;36m__________________________________________");
+    console.log(colors.serverLog + "__________________________________________");
+    console.log(colors.serverLog + "App started and listening on Port:", port)
+    console.log(colors.serverLog + "Starting software in mode: " + con.softwareMode)
+    console.log(colors.serverLog + "Starting Server at:", new Date(Date.now()));
+    console.log(colors.serverLog + "__________________________________________");
 }

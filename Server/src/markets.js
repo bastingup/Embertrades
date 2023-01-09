@@ -1,12 +1,11 @@
 import {default as ccxt} from "ccxt";
 import {app} from "./server.js"
-import * as config from "./config.js"
 import * as server from "./server.js"
 import * as dbmanagement from "./databaseManagement.js"
 import dotenv from 'dotenv'
 dotenv.config()
-
-// Client
+import * as colors from "./colors.js"
+// Client 
 export var binanceClient = null
 
 // --------------------------------------------------
@@ -15,6 +14,7 @@ export var binanceClient = null
 // --------------------------------------------------
 // --------------------------------------------------
 
+// Instantiate Client
 export function instantiateBinanceClient() {
   try {
     binanceClient = new ccxt.binance({
@@ -23,49 +23,127 @@ export function instantiateBinanceClient() {
         enableRateLimit: true,
         adjustForTimeDifference: true
     });
-      console.log("Got Binance Client");
+      console.log(colors.infoLog + "MARKETS - Got Binance Client");
       server.eventBus.emit("binance-instantiated");
   } catch(e) {
-      console.log("\u001b[0;36mCould not instantiate client properly")
+      console.log(colors.infoLog + "MARKETS - Could not instantiate client properly")
       console.log(e)
   }
 }
 
-export async function getHistoricData(configData, i) {
-  // Build market for asset at index
-  const market = configData.trading.markets[i] + "/BUSD"
-  try {
-    var since = (Date.now() - ((configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]) * configData.trading.stepsInTime));
-    return await Promise.all([
-      binanceClient.fetch_ohlcv(market, configData.trading.timeStepSize, since = since)
-    ]);
-  } catch (e) {
-    console.log(e)}
+// Check for wholes in db
+export function checkLastTimestampPerAsset(configData) {
+
+  // Define the default since value
+  let since = (Date.now() - ((configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]) * configData.trading.stepsInTime));
+  for (const asset of configData.trading.markets) {
+    dbmanagement.db.markets.find({asset : asset}, function (err, docs) {
+      if (docs.length === 0) {
+        console.log(colors.dbLog + "MARKETS - Found empty database for", asset.toString(), "- Proceeding to download data in compliance with config.")
+        server.eventBus.emit("download-market-data", null, configData, asset, since, configData.trading.stepsInTime)
+      }
+      else {
+        console.log(colors.dbLog + "MARKETS - Found", docs.length.toString(), "entries in database for", asset.toString(), "- Proceeding to download data in compliance with config.")
+        // Find the latest entry in db
+        docs = sortDocsByTimestamp(docs)
+        const lastDoc = docs[docs.length - 1]
+
+        // Find out how many entries are missing between last entry and now
+        const numberOfMissingEntries = howManyTimestepsAreMissing(configData, lastDoc)
+        const numberOfEntriesToFillNow = Math.floor(numberOfMissingEntries)
+        const remainderToFill = numberOfMissingEntries - numberOfEntriesToFillNow
+        const unixUntilNextRun = remainderToFill * configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]
+        const closable = isGapInMarketDBClosable(configData, numberOfMissingEntries)
+
+        if (closable) {
+          if (numberOfEntriesToFillNow >= 1) {
+            const closeSince = lastDoc.timeStamp + configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]
+            server.eventBus.emit("download-market-data", null, configData, asset, closeSince, numberOfEntriesToFillNow)
+          }
+          else {
+            console.log(colors.infoLog + "MARKETS - No need to fill any gaps.")
+          }
+          server.eventBus.emit("time-to-next-run", null, configData, remainderToFill)
+        }
+        else {
+          dbmanagement.db.markets.remove({ asset: asset }, {}, function (err, numRemoved) {
+            console.log(colors.dbLog + "MARKETS - Gap in markets bd not closable, cleared markets db and removed", numRemoved, "entries. Starting from scratch.")
+            server.eventBus.emit("download-market-data", null, configData, asset, since, configData.trading.stepsInTime)
+          });
+        }
+      }
+    });
+  }
 }
 
-export async function getMarketDataAndWriteToDB(configData, i) {
-  const data = await getHistoricData(configData, i)
-  server.eventBus.emit("got-market-data", null, configData, configData.trading.markets[i], data)
-  /*
-  let newDocs = []
-  for (let j = 0; j < data[0].length; j++) {
-    var doc = {
-      timestamp: data[0][j][0],
-      asset : configData.trading.markets[i],
-      open : data[0][j][1],
-      high : data[0][j][2],
-      low : data[0][j][3],
-      close : data[0][j][4]
-    };
-    newDocs.push(doc);
+function isGapInMarketDBClosable(configData, numberOfMissingEntries) { 
+  if (numberOfMissingEntries < configData.trading.stepsInTime) {
+    return true
+  }
+  return false
+}
+
+function howManyTimestepsAreMissing(configData, doc) {
+  return (Date.now() - doc.timeStamp) / configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]
+}
+
+function sortDocsByTimestamp(docs) {
+  return docs.sort((a, b) => {
+      if (a.timeStamp < b.timeStamp) {
+        return -1;
+      }
+  });
+}
+
+export function fetchMarketData(configData, asset, since, limit) {
+  getMarketDataAndWriteToDB(configData, asset, since, limit)
+}
+
+async function getMarketDataAndWriteToDB(configData, asset, since, limit) {
+  const data = await getHistoricData(configData, asset, since, limit)
+  console.log(colors.importantInfoLog + "MARKETS - Got market data for", asset, "- building signals now.")
+
+  if (needToFillUpDownloadedDataWithDBData(configData, limit)) {
+    console.log(colors.infoLog + "MARKETS - Need to retrieve data from db, not enough data downloaded to hand over to indicators.")
+    // TODO
   }
 
-  dbmanagement.db.markets.insert(newDocs, function (err, newDoc) { 
-    // optional callback
-    console.log("Added", data[0].length, "entries for", configData.trading.markets[i], ". Emitting event.")
-    server.eventBus.emit("got-market-data", null, configData, configData.trading.markets[i])
-  });
-  */
+  server.eventBus.emit("got-market-data", null, configData, asset, data)
+}
+
+function needToFillUpDownloadedDataWithDBData(configData, limit) {
+  if (limit < configData.trading.stepsInTime) {
+    return true
+  }
+  return false
+}
+
+async function getHistoricData(configData, asset, since, limit) {
+  // Build market for asset at index
+  const market = asset + "/BUSD"
+  try {
+    return await Promise.all([
+      binanceClient.fetch_ohlcv(market, configData.trading.timeStepSize, since = since, limit = limit)
+    ]);
+  } catch (e) {
+    console.log(colors.infoLog + "MARKETS - " + e)}
+}
+
+// --- CALLED SOMEWHERE ELSE ---
+export function buildCandlesFromDownloadedData(data) {
+  var candles = [];
+  for (var i = 0; i < data.length; i++) {
+    candles.push({
+      "close" : data[i][4],
+      "high" : data[i][2],
+      "low" : data[i][3]
+    })
+  }
+  return candles;
+}
+
+export function buildCandlesFromDBData(data) {
+
 }
 
 // --------------------------------------------------
@@ -125,18 +203,6 @@ export function extractOHLCFromData(data, f) {
   return close;
 }
 
-
-export function buildCandles(data) {
-  var candles = [];
-  for (var i = 0; i < data.length; i++) {
-    candles.push({
-      "close" : data[i][4],
-      "high" : data[i][2],
-      "low" : data[i][3]
-    })
-  }
-  return candles;
-}
 
 export function getAllBusdMarkets() {
   getAllMarkets().then(function(allMarkets) {

@@ -5,9 +5,9 @@
 
 
     "trading" : {
-        "markets" : ["ETH"],
+        "markets" : ["ETH", "BTC"],
         "stepsInTime" : 100,
-        "timeStepSize" : "1h",
+        "timeStepSize" : "5m",
         "stoploss" : {
             "mode" : "ATR",
             "value" : 4
