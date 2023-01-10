@@ -14,7 +14,7 @@ import { stringify } from 'qs';
 
 export function buildTradingSignals(configData, asset, data, limit, docs) {
 
-  console.log(colors.infoLog + "INDICATORS - Building technical indicators for", asset, ".")
+  console.log(colors.infoLog + "INDICATORS - Starting to calculate technical indicators for", asset, ".")
   
   // List of technical indicators with configs
   const selectedSignals = configData.trading.signalsSettings
@@ -39,7 +39,12 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
       case "STOCH" :
         console.log(colors.infoLog + "INDICATORS - Building Stochastic Oscillator signals for", asset)
         indicatorResults[selectedSignals[j].name] = indicatorSTOCH(selectedSignals[j], candles)
+        break
 
+      case "ROC" :
+        console.log(colors.infoLog + "INDICATORS - Building Rate of Change signals for", asset)
+        indicatorResults[selectedSignals[j].name] = indicatorROC(selectedSignals[j], candles)
+        break
     }
   }
 
@@ -47,6 +52,7 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
   const realC = candles.length - limit
   for (let c = realC, f = 0; c < candles.length; c++, f++) {
     candles[c].STOCH = parseFloat(indicatorResults.STOCH[c])
+    candles[c].ROC = parseFloat(indicatorResults.ROC[c])
     candles[c].timeStamp = data[0][f][0]
     candles[c].asset = asset
   }
@@ -89,6 +95,22 @@ function indicatorSTOCH(conf, candles) {
   }
   return stochResults
 }
+
+// ROC
+function indicatorROC(conf, candles) {
+  const roc = new ROC(conf.signalConfig.interval);
+  let rocResults = []
+  for (const candle of candles) {
+    const result = roc.update(candle["close"]);
+    let r = "Unstable"
+    if (roc.isStable && result) {
+      r = roc.getResult().toFixed(2)
+    }
+    rocResults.push(result)
+  }
+  return rocResults
+}
+
 
 
 // --------------------------------------------------

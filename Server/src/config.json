@@ -5,11 +5,12 @@
 
 
     "trading" : {
-        "markets" : ["BTC"],
+        "markets" : ["ETH"],
         "stepsInTime" : 100,
         "timeStepSize" : "1m",
         "stoploss" : {
             "mode" : "ATR",
+            "availableModes" : ["ATR", "PERCENT"],
             "value" : 4
         },
         "timeWindows" : {
@@ -23,7 +24,13 @@
                     "overSold" : 20,
                     "overbought" : 80,
                     "periodK" : 14,
-                    "periodD" : 5
+                    "periodD" : 1
+                }
+            },
+            {
+                "name" : "ROC",
+                "signalConfig" : {
+                    "interval" : 24
                 }
             }
         ]
