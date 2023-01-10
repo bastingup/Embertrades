@@ -12,7 +12,7 @@ import { stringify } from 'qs';
 // --------------------------------------------------
 // --------------------------------------------------
 
-export function buildTradingSignals(configData, asset, data) {
+export function buildTradingSignals(configData, asset, data, limit, docs) {
 
   console.log(colors.infoLog + "INDICATORS - Building technical indicators for", asset, ".")
   
@@ -22,6 +22,15 @@ export function buildTradingSignals(configData, asset, data) {
   // Candles
   let candles = markets.buildCandlesFromDownloadedData(data[0]);
   let indicatorResults = {}
+  let oldCandles = []
+  let allCandles = []
+
+  // If we are just adding things to ongoing db, get old candles for indicators
+  if (limit < configData.trading.stepsInTime) {
+    oldCandles = buildCandlesFromDBData(docs)
+    allCandles = oldCandles.concat(candles)
+    candles = allCandles
+  }
 
   // Iterate all indicators
   for (let j = 0; j < selectedSignals.length; j++) {
@@ -35,16 +44,30 @@ export function buildTradingSignals(configData, asset, data) {
   }
 
   // PUT ALL CANDLES WITH THEIR INDICATOR RESULTS TOGETHER
-  for (let c = 0; c < candles.length; c++) {
+  const realC = candles.length - limit
+  for (let c = realC, f = 0; c < candles.length; c++, f++) {
     candles[c].STOCH = parseFloat(indicatorResults.STOCH[c])
-    candles[c].timeStamp = data[0][c][0]
+    candles[c].timeStamp = data[0][f][0]
     candles[c].asset = asset
   }
-  dbmanagement.db.markets.insert(candles, function (err, newDoc) {
-    console.log(colors.dbLog + "INDICATORS - Added", candles.length.toString(), "of asset", asset.toString(), "to the markets database.")
-  });
 
+  // Add to db
+  dbmanagement.db.markets.insert(candles.slice(-limit), function (err, newDoc) {
+    console.log(colors.dbLog + "INDICATORS - Added", limit.toString(), "of asset", asset.toString(), "to the markets database.")
+  });
   console.log(colors.importantInfoLog + "INDICATORS - Finished building indicators for", asset)
+}
+
+function buildCandlesFromDBData(docs) {
+  var candles = [];
+  for (var i = 0; i < docs.length; i++) {
+    candles.push({
+      "close" : docs[i]["close"],
+      "high" : docs[i]["high"],
+      "low" : docs[i]["low"]
+    })
+  }
+  return candles;
 }
 
 // --------------- INDICATORS -----------------------

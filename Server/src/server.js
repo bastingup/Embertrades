@@ -60,9 +60,7 @@ export function startApp(port) {
 
 // LOG AND INFO
 function logServerStart(port) {
-    console.log(colors.serverLog + "__________________________________________");
-    console.log(colors.serverLog + "App started and listening on Port:", port)
-    console.log(colors.serverLog + "Starting software in mode: " + con.softwareMode)
-    console.log(colors.serverLog + "Starting Server at:", new Date(Date.now()));
-    console.log(colors.serverLog + "__________________________________________");
+    console.log(colors.serverLog + "SERVER - App started and listening on Port:", port)
+    console.log(colors.serverLog + "SERVER - Starting software in mode: " + con.softwareMode)
+    console.log(colors.serverLog + "SERVER - Starting Server at:", new Date(Date.now()).toString());
 }

@@ -40,7 +40,7 @@ export function checkLastTimestampPerAsset(configData) {
     dbmanagement.db.markets.find({asset : asset}, function (err, docs) {
       if (docs.length === 0) {
         console.log(colors.dbLog + "MARKETS - Found empty database for", asset.toString(), "- Proceeding to download data in compliance with config.")
-        server.eventBus.emit("download-market-data", null, configData, asset, since, configData.trading.stepsInTime)
+        server.eventBus.emit("download-market-data", null, configData, asset, since, configData.trading.stepsInTime, docs)
       }
       else {
         console.log(colors.dbLog + "MARKETS - Found", docs.length.toString(), "entries in database for", asset.toString(), "- Proceeding to download data in compliance with config.")
@@ -58,17 +58,17 @@ export function checkLastTimestampPerAsset(configData) {
         if (closable) {
           if (numberOfEntriesToFillNow >= 1) {
             const closeSince = lastDoc.timeStamp + configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]
-            server.eventBus.emit("download-market-data", null, configData, asset, closeSince, numberOfEntriesToFillNow)
+            server.eventBus.emit("download-market-data", null, configData, asset, closeSince, numberOfEntriesToFillNow, docs)
           }
           else {
-            console.log(colors.infoLog + "MARKETS - No need to fill any gaps.")
+            console.log(colors.infoLog + "MARKETS - No need to fill any gaps. Gap in db amounts to", numberOfMissingEntries.toFixed(2), "missing entries.")
           }
-          server.eventBus.emit("time-to-next-run", null, configData, remainderToFill)
+          //server.eventBus.emit("time-to-next-run", null, configData, remainderToFill)
         }
         else {
           dbmanagement.db.markets.remove({ asset: asset }, {}, function (err, numRemoved) {
             console.log(colors.dbLog + "MARKETS - Gap in markets bd not closable, cleared markets db and removed", numRemoved, "entries. Starting from scratch.")
-            server.eventBus.emit("download-market-data", null, configData, asset, since, configData.trading.stepsInTime)
+            server.eventBus.emit("download-market-data", null, configData, asset, since, configData.trading.stepsInTime, docs)
           });
         }
       }
@@ -95,11 +95,11 @@ function sortDocsByTimestamp(docs) {
   });
 }
 
-export function fetchMarketData(configData, asset, since, limit) {
-  getMarketDataAndWriteToDB(configData, asset, since, limit)
+export function fetchMarketData(configData, asset, since, limit, docs) {
+  getMarketDataAndWriteToDB(configData, asset, since, limit, docs)
 }
 
-async function getMarketDataAndWriteToDB(configData, asset, since, limit) {
+async function getMarketDataAndWriteToDB(configData, asset, since, limit, docs) {
   const data = await getHistoricData(configData, asset, since, limit)
   console.log(colors.importantInfoLog + "MARKETS - Got market data for", asset, "- building signals now.")
 
@@ -108,7 +108,7 @@ async function getMarketDataAndWriteToDB(configData, asset, since, limit) {
     // TODO
   }
 
-  server.eventBus.emit("got-market-data", null, configData, asset, data)
+  server.eventBus.emit("got-market-data", null, configData, asset, data, limit, docs)
 }
 
 function needToFillUpDownloadedDataWithDBData(configData, limit) {
