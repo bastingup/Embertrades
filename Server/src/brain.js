@@ -26,6 +26,9 @@ export async function scheduleNextRun(configData, timeUntilNextRun) {
     }
 }
 
+export async function backtestIndicatorSelection() {
+    console.log(colors.stoplossLog + "BRAIN - On-the-fly-backtest not implemented yet.")
+}
 
 // --------------------------------------------------
 // --------------------------------------------------

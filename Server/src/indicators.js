@@ -1,16 +1,26 @@
-import e from 'express';
 import {SMA, ROC, ADX, MACD, EMA, ATR, StochasticOscillator} from 'trading-signals'; // https://github.com/bennycode/trading-signals
 import * as config from './config.js';
 import * as dbmanagement from "./databaseManagement.js";
 import * as markets from './markets.js';
 import * as colors from "./colors.js"
-import { stringify } from 'qs';
+import * as server from "./server.js"
 
 // --------------------------------------------------
 // --------------------------------------------------
 // --------------- BACKEND SOLO ---------------------
 // --------------------------------------------------
 // --------------------------------------------------
+
+let registeredAssets = 0
+
+export function giveFeedbackAssetDone(configData) {
+  registeredAssets = registeredAssets + 1
+  if (registeredAssets === configData.trading.markets.length) {
+      console.log(colors.importantInfoLog + "INDICATORS - All calculations for indiators are done for this run.")
+      server.eventBus.emit("all-assets-done", null, configData)
+      registeredAssets = 0
+  }
+}
 
 export function buildTradingSignals(configData, asset, data, limit, docs) {
 
@@ -60,6 +70,7 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
   // Add to db
   dbmanagement.db.markets.insert(candles.slice(-limit), function (err, newDoc) {
     console.log(colors.dbLog + "INDICATORS - Added", limit.toString(), "of asset", asset.toString(), "to the markets database.")
+    giveFeedbackAssetDone(configData)
   });
   console.log(colors.importantInfoLog + "INDICATORS - Finished building indicators for", asset)
 }

@@ -28,9 +28,8 @@ async function main() {
     server.eventBus.once('all-db-alive', registerForNextInterval) // Register only once to kick off setInterval in the beginning
     server.eventBus.on('got-market-data', indicators.buildTradingSignals); // Market data has been loaded, build indicators
     server.eventBus.on('download-market-data', markets.fetchMarketData); // Proceed to fetch market data
-    server.eventBus.on('time-to-next-run', brain.scheduleNextRun);
     server.eventBus.on('next-run', buildMarketInformation); // setInterval ran through, restart the workflow loop
-    
+    server.eventBus.on('all-assets-done', brain.backtestIndicatorSelection); // Which indicator combination would have made the most paper
 
     // --------------------------------------------------
     // --------------- SET UP, CONFIG & -----------------
@@ -51,12 +50,7 @@ async function main() {
     // --------------- DEBUG CODE -----------------------
     // --------------------------------------------------
 
-    // Download market data and build signals afterwards
-    //markets.getMarketDataAndWriteToDB(configData, 0)
-   
-    //markets.fetchMarketDataForAllConfiguredAssets(configData)
 
-    
 
     // --------------------------------------------------
     // --------------- FINISH MAIN ----------------------

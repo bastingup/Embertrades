@@ -63,11 +63,10 @@ export function checkLastTimestampPerAsset(configData) {
           else {
             console.log(colors.infoLog + "MARKETS - No need to fill any gaps. Gap in db amounts to", numberOfMissingEntries.toFixed(2), "missing entries.")
           }
-          //server.eventBus.emit("time-to-next-run", null, configData, remainderToFill)
         }
         else {
-          dbmanagement.db.markets.remove({ asset: asset }, {}, function (err, numRemoved) {
-            console.log(colors.dbLog + "MARKETS - Gap in markets bd not closable, cleared markets db and removed", numRemoved, "entries. Starting from scratch.")
+          dbmanagement.db.markets.remove({ asset: asset }, { multi: true }, function (err, numRemoved) {
+            console.log(colors.dbLog + "MARKETS - Gap in markets bd not closable, cleared markets db and removed", numRemoved.toString(), "entries. Starting from scratch.")
             server.eventBus.emit("download-market-data", null, configData, asset, since, configData.trading.stepsInTime, docs)
           });
         }
