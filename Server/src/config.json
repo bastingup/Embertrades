@@ -39,6 +39,12 @@
                     "shortma" : 7,
                     "longma" : 14
                 }
+            },
+            {
+                "name" : "ADX",
+                "signalConfig" : {
+                    "interval" : 10
+                }
             }
         ]
     },

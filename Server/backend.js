@@ -1,5 +1,4 @@
 // #region IMPORTS
-import {default as fs} from "fs";
 import * as markets from './src/markets.js';
 import * as indicators from './src/indicators.js'
 import * as dbmanagement from "./src/databaseManagement.js"
@@ -30,6 +29,7 @@ async function main() {
     server.eventBus.on('download-market-data', markets.fetchMarketData); // Proceed to fetch market data
     server.eventBus.on('next-run', buildMarketInformation); // setInterval ran through, restart the workflow loop
     server.eventBus.on('all-assets-done', brain.backtestIndicatorSelection); // Which indicator combination would have made the most paper
+
 
     // --------------------------------------------------
     // --------------- SET UP, CONFIG & -----------------
@@ -62,8 +62,7 @@ async function main() {
 
 
 // --------------------------------------------------
-// --------------- DOWNLOAD MARKET DATA -------------
-// --------------- AND BUILD INDICATORS -------------
+// --------------- MAIN FUNCTIONS -------------------
 // --------------------------------------------------
 
 async function buildMarketInformation(configData) {
@@ -90,6 +89,7 @@ function welcomeMessage(configData) {
     console.log(colors.helloLog + "Have fun trying to get rich.")
     console.log(colors.helloLog + "______________________________________________")
 }
+
 
 // --------------------------------------------------
 // --------------- CALL MAIN ------------------------

@@ -62,6 +62,15 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
         indicatorResults[selectedSignals[j].name].SHORT = indicatorMA(selectedSignals[j].signalConfig.shortma, candles)
         indicatorResults[selectedSignals[j].name].LONG = indicatorMA(selectedSignals[j].signalConfig.longma, candles)
         break
+
+      case "ADX" :
+        console.log(colors.infoLog + "INDICATORS - Building ADX indicator for", asset)
+        indicatorResults[selectedSignals[j].name] = {"PDI" : null, "MDI" : null}
+        const r = indicatorADX(selectedSignals[j].signalConfig.interval, candles)
+        indicatorResults[selectedSignals[j].name].PDI = r.p
+        indicatorResults[selectedSignals[j].name].MDI = r.m
+        indicatorResults[selectedSignals[j].name].ADX_R = r.f
+        break
     }
   }
 
@@ -72,6 +81,9 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
     candles[c].ROC = parseFloat(indicatorResults.ROC[c])
     candles[c].MA_SHORT = parseFloat(indicatorResults.MADOUBLE.SHORT[c])
     candles[c].MA_LONG = parseFloat(indicatorResults.MADOUBLE.LONG[c])
+    candles[c].ADX_PDI = parseFloat(indicatorResults.ADX.PDI[c])
+    candles[c].ADX_MDI = parseFloat(indicatorResults.ADX.MDI[c])
+    candles[c].ADX_RESULT = parseFloat(indicatorResults.ADX.ADX_R[c])
     candles[c].timeStamp = data[0][f][0]
     candles[c].asset = asset
   }
@@ -146,6 +158,28 @@ function indicatorMA(n, candles) {
   return results
 }
 
+// ADX
+function indicatorADX(n, candles) {
+  const adx = new ADX(n);
+  let pdiResult = []
+  let mdiResult = []
+  let fResult = []
+  for (const candle of candles) {
+    const result = adx.update(candle);
+    let p = "Unstable"
+    let m = "Unstable"
+    let f = "Unstable"
+    if (adx.isStable && result) {
+      p = adx.pdi.toFixed(4)
+      m = adx.mdi.toFixed(4)
+      f = adx.getResult().toFixed(4)
+    }
+    pdiResult.push(p)
+    mdiResult.push(m)
+    fResult.push(f)
+  }
+  return {"p" : pdiResult, "m" : mdiResult, "f" : fResult }
+}
 
 
 // --------------------------------------------------
