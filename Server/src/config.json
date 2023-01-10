@@ -7,7 +7,7 @@
     "trading" : {
         "markets" : ["ETH"],
         "stepsInTime" : 100,
-        "timeStepSize" : "1m",
+        "timeStepSize" : "1h",
         "stoploss" : {
             "mode" : "ATR",
             "availableModes" : ["ATR", "PERCENT"],
@@ -31,6 +31,13 @@
                 "name" : "ROC",
                 "signalConfig" : {
                     "interval" : 24
+                }
+            },
+            {
+                "name" : "MADOUBLE",
+                "signalConfig" : {
+                    "shortma" : 7,
+                    "longma" : 14
                 }
             }
         ]

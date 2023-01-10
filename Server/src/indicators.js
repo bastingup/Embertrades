@@ -47,13 +47,20 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
     switch (selectedSignals[j].name) {
 
       case "STOCH" :
-        console.log(colors.infoLog + "INDICATORS - Building Stochastic Oscillator signals for", asset)
+        console.log(colors.infoLog + "INDICATORS - Building Stochastic Oscillator indicator for", asset)
         indicatorResults[selectedSignals[j].name] = indicatorSTOCH(selectedSignals[j], candles)
         break
 
       case "ROC" :
-        console.log(colors.infoLog + "INDICATORS - Building Rate of Change signals for", asset)
+        console.log(colors.infoLog + "INDICATORS - Building Rate of Change indicator for", asset)
         indicatorResults[selectedSignals[j].name] = indicatorROC(selectedSignals[j], candles)
+        break
+
+      case "MADOUBLE" :
+        console.log(colors.infoLog + "INDICATORS - Building Double Moving Average indicator for", asset)
+        indicatorResults[selectedSignals[j].name] = {"SHORT" : null, "LONG" : null}
+        indicatorResults[selectedSignals[j].name].SHORT = indicatorMA(selectedSignals[j].signalConfig.shortma, candles)
+        indicatorResults[selectedSignals[j].name].LONG = indicatorMA(selectedSignals[j].signalConfig.longma, candles)
         break
     }
   }
@@ -63,6 +70,8 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
   for (let c = realC, f = 0; c < candles.length; c++, f++) {
     candles[c].STOCH = parseFloat(indicatorResults.STOCH[c])
     candles[c].ROC = parseFloat(indicatorResults.ROC[c])
+    candles[c].MA_SHORT = parseFloat(indicatorResults.MADOUBLE.SHORT[c])
+    candles[c].MA_LONG = parseFloat(indicatorResults.MADOUBLE.LONG[c])
     candles[c].timeStamp = data[0][f][0]
     candles[c].asset = asset
   }
@@ -98,11 +107,11 @@ function indicatorSTOCH(conf, candles) {
   let stochResults = []
   for (const candle of candles) {
     const stochResult = stoch.update(candle);
-    let result = "Unstable"
+    let r = "Unstable"
     if (stoch.isStable && stochResult) {
-      result = stoch.getResult().k.toFixed(5)
+      r = stoch.getResult().k.toFixed(5)
     }
-    stochResults.push(result)
+    stochResults.push(r)
   }
   return stochResults
 }
@@ -117,9 +126,24 @@ function indicatorROC(conf, candles) {
     if (roc.isStable && result) {
       r = roc.getResult().toFixed(2)
     }
-    rocResults.push(result)
+    rocResults.push(r)
   }
   return rocResults
+}
+
+// MA
+function indicatorMA(n, candles) {
+  const ma = new SMA(n);
+  let results = []
+  for (const candle of candles) {
+    const result = ma.update(candle["close"]);
+    let r = "Unstable"
+    if (ma.isStable && result) {
+      r = ma.getResult().toFixed(2)
+    }
+    results.push(r)
+  }
+  return results
 }
 
 
