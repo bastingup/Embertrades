@@ -104,7 +104,6 @@ async function getMarketDataAndWriteToDB(configData, asset, since, limit, docs) 
 
   if (needToFillUpDownloadedDataWithDBData(configData, limit)) {
     console.log(colors.infoLog + "MARKETS - Need to retrieve data from db, not enough data downloaded to hand over to indicators.")
-    // TODO
   }
 
   server.eventBus.emit("got-market-data", null, configData, asset, data, limit, docs)

@@ -1,4 +1,4 @@
-import {SMA, ROC, ADX, MACD, EMA, ATR, StochasticOscillator} from 'trading-signals'; // https://github.com/bennycode/trading-signals
+import {SMA, ROC, ADX, MACD, EMA, ATR, StochasticOscillator, RSI} from 'trading-signals'; // https://github.com/bennycode/trading-signals
 import * as config from './config.js';
 import * as dbmanagement from "./databaseManagement.js";
 import * as markets from './markets.js';
@@ -12,6 +12,8 @@ import * as server from "./server.js"
 // --------------------------------------------------
 
 let registeredAssets = 0
+export const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
+export const crosses = {"DOWNTOP" : "DOWNTOP", "UPLOW" : "UPLOW", "STAYUP" : "STAYUP", "STAYDOWN" : "STAYDOWN", "UPTOP" : "UPTOP", "DOWNLOW" : "DOWNLOW", "NONE" : "NONE"}
 
 export function giveFeedbackAssetDone(configData) {
   registeredAssets = registeredAssets + 1
@@ -65,25 +67,52 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
 
       case "ADX" :
         console.log(colors.infoLog + "INDICATORS - Building ADX indicator for", asset)
-        indicatorResults[selectedSignals[j].name] = {"PDI" : null, "MDI" : null}
-        const r = indicatorADX(selectedSignals[j].signalConfig.interval, candles)
-        indicatorResults[selectedSignals[j].name].PDI = r.p
-        indicatorResults[selectedSignals[j].name].MDI = r.m
-        indicatorResults[selectedSignals[j].name].ADX_R = r.f
+
+        // Short term market
+        indicatorResults[selectedSignals[j].name] = {"PDI" : null, "MDI" : null, "ADX_R_SHORT" : null, "ADX_TREND_SHORT" : null}
+        const r = indicatorADX(selectedSignals[j].signalConfig, selectedSignals[j].signalConfig.currentMarketInterval, candles)
+        indicatorResults[selectedSignals[j].name].PDI_SHORT = r.p
+        indicatorResults[selectedSignals[j].name].MDI_SHORT = r.m
+        indicatorResults[selectedSignals[j].name].ADX_R_SHORT = r.f
+        indicatorResults[selectedSignals[j].name].ADX_TREND_SHORT = r.t
         break
+
+      case "RSI" :
+        console.log(colors.infoLog + "INDICATORS - Building Relative Strength Index indicator for", asset)
+        indicatorResults[selectedSignals[j].name] = {"RSI" : null, "CROSS" : null}
+        const s = indicatorRSI(configData, selectedSignals[j].signalConfig.interval, candles)
+        indicatorResults[selectedSignals[j].name].RSI = s.results
+        indicatorResults[selectedSignals[j].name].CROSS = s.crosses
+        break 
     }
   }
 
   // PUT ALL CANDLES WITH THEIR INDICATOR RESULTS TOGETHER
   const realC = candles.length - limit
   for (let c = realC, f = 0; c < candles.length; c++, f++) {
+
+    // Stoch Osc
     candles[c].STOCH = parseFloat(indicatorResults.STOCH[c])
+
+    // RoC
     candles[c].ROC = parseFloat(indicatorResults.ROC[c])
+
+    // Moving Average
     candles[c].MA_SHORT = parseFloat(indicatorResults.MADOUBLE.SHORT[c])
     candles[c].MA_LONG = parseFloat(indicatorResults.MADOUBLE.LONG[c])
-    candles[c].ADX_PDI = parseFloat(indicatorResults.ADX.PDI[c])
-    candles[c].ADX_MDI = parseFloat(indicatorResults.ADX.MDI[c])
-    candles[c].ADX_RESULT = parseFloat(indicatorResults.ADX.ADX_R[c])
+
+    // ADX Shortterm
+    candles[c].ADX_PDI_SHORT = parseFloat(indicatorResults.ADX.PDI_SHORT[c])
+    candles[c].ADX_MDI_SHORT = parseFloat(indicatorResults.ADX.MDI_SHORT[c])
+    candles[c].ADX_RESULT_SHORT = parseFloat(indicatorResults.ADX.ADX_R_SHORT[c])
+    candles[c].ADX_TREND_SHORT = indicatorResults.ADX.ADX_TREND_SHORT[c]
+
+    // RSI
+    candles[c].RSI = parseFloat(indicatorResults.RSI.RSI[c])
+    candles[c].RSI_CROSS = indicatorResults.RSI.CROSS[c]
+    
+
+    // General Info
     candles[c].timeStamp = data[0][f][0]
     candles[c].asset = asset
   }
@@ -95,6 +124,7 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
   });
   console.log(colors.importantInfoLog + "INDICATORS - Finished building indicators for", asset)
 }
+
 
 function buildCandlesFromDBData(docs) {
   var candles = [];
@@ -159,26 +189,91 @@ function indicatorMA(n, candles) {
 }
 
 // ADX
-function indicatorADX(n, candles) {
+function indicatorADX(configData, n, candles) {
   const adx = new ADX(n);
   let pdiResult = []
   let mdiResult = []
   let fResult = []
+  let tResult = []
   for (const candle of candles) {
     const result = adx.update(candle);
     let p = "Unstable"
     let m = "Unstable"
     let f = "Unstable"
+    let t = marketState.UNKNOWN
     if (adx.isStable && result) {
       p = adx.pdi.toFixed(4)
       m = adx.mdi.toFixed(4)
       f = adx.getResult().toFixed(4)
+      t = determineADX(configData, f, p, m)
+      
     }
     pdiResult.push(p)
     mdiResult.push(m)
     fResult.push(f)
+    tResult.push(t)
   }
-  return {"p" : pdiResult, "m" : mdiResult, "f" : fResult }
+  return {"p" : pdiResult, "m" : mdiResult, "f" : fResult , "t" : tResult}
+}
+function determineADX(configData, result, p, m){
+  let state = marketState.UNKNOWN
+  if (result != undefined) {
+    if (result > configData.threshold) {
+      if (p > m) {state = marketState.BULL}
+      else if (p < m) {state = marketState.BEAR}
+    }
+    else {
+      state = marketState.RANGE
+    }
+  }
+  return state
+}
+
+// RSI
+function indicatorRSI(configData, n, candles) {
+  const indi = new RSI(n);
+  let results = []
+  let crossResults = []
+
+  for (const candle of candles) {
+    const result = indi.update(candle["close"]);
+    let r = "Unstable"
+    if (indi.isStable && result) {
+      r = indi.getResult().toFixed(4)
+    }
+    results.push(r)
+
+    const crossedDown = function(configData, results) {
+      const last = results[results.length - 1]
+      const preLast = results[results.length - 2]
+      let lim = 100
+      let crossed = crosses.NONE
+
+      for (const d of configData.trading.rules.DEFAULT.filter(d => d.name == "RSI")) {
+        if (preLast > d.sell && last < d.sell) {
+          crossed = crosses.DOWNTOP
+        }
+        else if (preLast < d.buy && last > d.buy) {
+          crossed = crosses.UPLOW
+        }
+        else if (preLast > d.sell && last > d.sell) {
+          crossed = crosses.STAYUP
+        }
+        else if (preLast < d.buy && last < d.buy) {
+          crossed = crosses.STAYDOWN
+        }
+        else if (preLast < d.sell && last > d.sell) {
+          crossed = crosses.UPTOP
+        }
+        else if (preLast > d.buy && last < d.buy) {
+          crossed = crosses.DOWNLOW
+        }
+      }
+      return crossed
+    }
+    crossResults.push(crossedDown(configData, results))
+  }
+  return {"results" : results, "crosses" : crossResults}
 }
 
 
@@ -189,14 +284,10 @@ function indicatorADX(n, candles) {
 // --------------------------------------------------
 
 //#region Legacy
-const movingAverageShortterm = 10;
-const movingAverageLongterm = 40;
 const adxInterval = 10;
 const adxThreshold = 20;
-const oversoldLimit = 20
-const overboughtLimit = 80
 
-export const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
+//export const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
 export const macdState = {"CROSSED_TO_POSITIVE": "CROSSED_TO_POSITIVE", "CROSSED_TO_NEGATIVE": "CROSSED_TO_NEGATIVE", "ZERO_ERROR": "ZERO_ERROR", "NO_CHANGE": "NO_CHANGE"}
 export const crossOvers = {"CROSSED_UP" : "CROSSED_UP", "CROSSED_DOWN" : "CROSSED_DOWN", "NO_CHANGE": "NO_CHANGE"}
 export const indicatorForDecision = {"MACD" : "MACD",

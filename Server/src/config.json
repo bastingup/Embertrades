@@ -43,10 +43,25 @@
             {
                 "name" : "ADX",
                 "signalConfig" : {
-                    "interval" : 10
+                    "currentMarketInterval" : 14,
+                    "longMarketInterval" : 48,
+                    "threshold" : 20
+                }
+            },
+            {
+                "name" : "RSI",
+                "signalConfig" : {
+                    "interval" : 14
                 }
             }
-        ]
+        ],
+        "rules" : {
+            "BEAR" : {"BUY" : ["STOCH", "RSI"]},
+            "BULL" : {"BUY" : ["STOCH", "RSI"], "SELL" : ["RSI"]},
+            "RANGE" : {"BUY" : ["STOCH", "RSI"]},
+            "UNKNOWN" : {"BUY" : ["STOCH", "RSI"]},
+            "DEFAULT" : [{"name" : "RSI", "buy" : 30, "sell" : 70}, {"name" : "STOCH", "buy" : 20, "sell" : 80}]
+            }
     },
 
 
