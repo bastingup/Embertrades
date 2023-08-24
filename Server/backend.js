@@ -28,7 +28,7 @@ async function main() {
     server.eventBus.on('got-market-data', indicators.buildTradingSignals); // Market data has been loaded, build indicators
     server.eventBus.on('download-market-data', markets.fetchMarketData); // Proceed to fetch market data
     server.eventBus.on('next-run', buildMarketInformation); // setInterval ran through, restart the workflow loop
-    server.eventBus.on('all-assets-done', brain.backtestIndicatorSelection); // Which indicator combination would have made the most paper
+    server.eventBus.on('all-assets-done', brain.trading); // Which indicator combination would have made the most paper
 
 
     // --------------------------------------------------

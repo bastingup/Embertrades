@@ -21,7 +21,7 @@ export function instantiateBinanceClient() {
         apiKey: process.env.API_KEY,
         secret: process.env.API_SECRET,
         enableRateLimit: true,
-        adjustForTimeDifference: true
+        adjustForTimeDifference: false
     });
       console.log(colors.infoLog + "MARKETS - Got Binance Client");
       server.eventBus.emit("binance-instantiated");
@@ -34,8 +34,8 @@ export function instantiateBinanceClient() {
 // Check for wholes in db
 export function checkLastTimestampPerAsset(configData) {
 
-  // Define the default since value
   let since = (Date.now() - ((configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]) * configData.trading.stepsInTime));
+ // console.log(since, configData.tech.unixTimeToLookBack[configData.trading.timeStepSize] * configData.trading.stepsInTime, Date.now())
   for (const asset of configData.trading.markets) {
     dbmanagement.db.markets.find({asset : asset}, function (err, docs) {
       if (docs.length === 0) {
@@ -44,6 +44,7 @@ export function checkLastTimestampPerAsset(configData) {
       }
       else {
         console.log(colors.dbLog + "MARKETS - Found", docs.length.toString(), "entries in database for", asset.toString(), "- Proceeding to download data in compliance with config.")
+
         // Find the latest entry in db
         docs = sortDocsByTimestamp(docs)
         const lastDoc = docs[docs.length - 1]
@@ -52,7 +53,8 @@ export function checkLastTimestampPerAsset(configData) {
         const numberOfMissingEntries = howManyTimestepsAreMissing(configData, lastDoc)
         const numberOfEntriesToFillNow = Math.floor(numberOfMissingEntries)
         const remainderToFill = numberOfMissingEntries - numberOfEntriesToFillNow
-        const unixUntilNextRun = remainderToFill * configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]
+
+        //const unixUntilNextRun = remainderToFill * configData.tech.unixTimeToLookBack[configData.trading.timeStepSize]
         const closable = isGapInMarketDBClosable(configData, numberOfMissingEntries)
 
         if (closable) {

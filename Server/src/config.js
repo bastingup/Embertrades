@@ -17,11 +17,11 @@ export function readInConfigFile() {
 
 // --------------------------------------------------
 // --------------------------------------------------
-// --------------- BACKEND SOLO ---------------------
+// --------------/ BACKEND SOLO ---------------------
 // --------------------------------------------------
 // --------------------------------------------------
 
-
+/*
 
 // BACKTEST VERSION 3
 //#region Backend Attached
@@ -60,58 +60,6 @@ export var decisionSettings = {
   }
 }
 
-// BACKTEST VERSION 3
-
-// Master
-export const softwareModes = {
-                              // Is building signals after loading the data
-                              // IMPLEMENTED
-                              "Signals": "Signals",
-
-                              // Is gridsearching most profitable combinations of 3 out of all data
-                              // IMPLEMENTED
-                              "Gridsearch": "Gridsearch",
-
-                              // LIVE MODE WITH REAL ORDERS
-                              // TODO
-                              "Live" : "Live",
-
-                              // LIVE MODE with fake orders in local orderbook
-                              // TODO
-                              "Halflife" : "Halflife",
-
-                              // Run simulation with given parameters and assets
-                              // IMPLEMENTED
-                              "Test" : "Test",
-
-                              // Have running simulation with scan for most volatile assets and switch markets on the fly
-                              // TODO
-                              "Test_VolatilityMonitor" : "Test_VolatilityMonitor",
-                            
-                              // Only calls dev function
-                              // TODO
-                              "Dev" : "Dev",
-
-                          
-                              "FrontendDev" : "FrontendDev"
-                            };
-export const softwareMode = softwareModes.FrontendDev;
-
-export const stoplossModes = {"HARD" : "HARD",
-                              "TRAILING_HARD" : "TRAILING_HARD",
-                              "TRAILING_ATR" : "TRAILING_ATR",
-                              "ATR" : "ATR"};
-                              
-export const stoplossMode = stoplossModes.ATR;
-
-// TODO Implement corresponding functions
-/*
-export const marketDataModes = {"Download": "Download"
-                      ,"DownloadAndSave": "DownloadAndSave",
-                       "ReadFromDisk" : "ReadFromDisk",
-                      "Dev" : "Dev"};
-export const marketDataMode = softwareModes.Download;
-*/
 
 export const atLeastRatioForBuy = 0.001;
 export const atLeastRatioForSell = 0.001;
@@ -197,5 +145,5 @@ export function adjustAtrMultipliers(isTrue) {
   else
     atrProfitMultiplier = 1
 }
-
+*/
 //#endregion

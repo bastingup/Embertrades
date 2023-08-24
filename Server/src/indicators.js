@@ -14,6 +14,7 @@ import * as server from "./server.js"
 let registeredAssets = 0
 export const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
 export const crosses = {"DOWNTOP" : "DOWNTOP", "UPLOW" : "UPLOW", "STAYUP" : "STAYUP", "STAYDOWN" : "STAYDOWN", "UPTOP" : "UPTOP", "DOWNLOW" : "DOWNLOW", "NONE" : "NONE"}
+export const macdState = {"CROSSED_TO_POSITIVE": "CROSSED_TO_POSITIVE", "CROSSED_TO_NEGATIVE": "CROSSED_TO_NEGATIVE", "ZERO_ERROR": "ZERO_ERROR", "NO_CHANGE": "NO_CHANGE"}
 
 export function giveFeedbackAssetDone(configData) {
   registeredAssets = registeredAssets + 1
@@ -47,6 +48,11 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
   // Iterate all indicators
   for (let j = 0; j < selectedSignals.length; j++) {
     switch (selectedSignals[j].name) {
+
+      case "MACD" :
+        console.log(colors.infoLog + "INDICATORS - Building MACD for", asset)
+        indicatorResults[selectedSignals[j].name] = indicatorMACD(selectedSignals[j], candles)
+        break
 
       case "STOCH" :
         console.log(colors.infoLog + "INDICATORS - Building Stochastic Oscillator indicator for", asset)
@@ -90,6 +96,9 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
   // PUT ALL CANDLES WITH THEIR INDICATOR RESULTS TOGETHER
   const realC = candles.length - limit
   for (let c = realC, f = 0; c < candles.length; c++, f++) {
+
+    // MACD
+    candles[c].MACD = determineMACD(indicatorResults.MACD[c - 1], indicatorResults.MACD[c])
 
     // Stoch Osc
     candles[c].STOCH = parseFloat(indicatorResults.STOCH[c])
@@ -140,6 +149,48 @@ function buildCandlesFromDBData(docs) {
 
 // --------------- INDICATORS -----------------------
 // --------------------------------------------------
+
+// MACD
+function indicatorMACD(conf, candles) {
+
+  const macd = new MACD({
+    indicator: EMA,
+    shortInterval: conf.signalConfig.short,
+    longInterval: conf.signalConfig.long,
+    signalInterval: conf.signalConfig.signal,
+  });
+  let results = []
+  for (const candle of candles) {
+    const result = macd.update(candle["close"]);
+    let r = "Unstable"
+    if (macd.isStable) {
+      r = macd.getResult().histogram.toFixed(4)
+    }
+    results.push(r)
+  }
+  return results
+}
+
+function determineMACD(past, now) {
+  const signPast = Math.sign(past);
+  const signNow = Math.sign(now);
+  try {
+    
+  if (signPast > signNow) {
+    return macdState.CROSSED_TO_NEGATIVE;
+  }
+  if (signPast < signNow) {
+    return macdState.CROSSED_TO_POSITIVE;
+  }
+  if (signNow === 0 || signPast === 0) {
+    return macdState.ZERO_ERROR;
+  }
+  return macdState.NO_CHANGE;
+  }
+  catch {
+    return macdState.ZERO_ERROR;
+  }
+}
 
 // Stochastic Oscillator
 function indicatorSTOCH(conf, candles) {
@@ -249,6 +300,7 @@ function indicatorRSI(configData, n, candles) {
       let lim = 100
       let crossed = crosses.NONE
 
+      // TODO refactor this for very obvious reasons
       for (const d of configData.trading.rules.DEFAULT.filter(d => d.name == "RSI")) {
         if (preLast > d.sell && last < d.sell) {
           crossed = crosses.DOWNTOP
@@ -288,7 +340,7 @@ const adxInterval = 10;
 const adxThreshold = 20;
 
 //export const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
-export const macdState = {"CROSSED_TO_POSITIVE": "CROSSED_TO_POSITIVE", "CROSSED_TO_NEGATIVE": "CROSSED_TO_NEGATIVE", "ZERO_ERROR": "ZERO_ERROR", "NO_CHANGE": "NO_CHANGE"}
+
 export const crossOvers = {"CROSSED_UP" : "CROSSED_UP", "CROSSED_DOWN" : "CROSSED_DOWN", "NO_CHANGE": "NO_CHANGE"}
 export const indicatorForDecision = {"MACD" : "MACD",
                                      "MACD_MEDIAN" : "MACD_MEDIAN",

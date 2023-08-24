@@ -1,15 +1,24 @@
 {
     "name" : "Embertrades",
-    "v" : 0.1,
-    "mode" : "dev",
+    "v" : 0.2,
+    "mode" : "backtest",
+    "availableModes" : ["dev", "backtest", "live_trading", "simulative_trading"],
 
 
     "trading" : {
         "markets" : ["ETH"],
-        "stepsInTime" : 100,
-        "timeStepSize" : "1h",
+        "fractionPerStepInTime" : 0.2,
+        "minimumBUSDSpendable" : 36,
+        "stepsInTime" : 1000,
+        "timeStepSize" : "4h",
         "stoploss" : {
-            "mode" : "ATR",
+            "mode" : "PERCENT",
+            "availableModes" : ["ATR", "PERCENT"],
+            "value" : 12
+        },
+        
+        "profit" : {
+            "mode" : "PERCENT",
             "availableModes" : ["ATR", "PERCENT"],
             "value" : 4
         },
@@ -18,6 +27,14 @@
             "shortWindow" : "1h"
         },
         "signalsSettings" : [
+            {
+                "name" : "MACD",
+                "signalConfig" : {
+                    "short" : 5,
+                    "long" : 2,
+                    "signal" : 9
+                }
+            },
             {
                 "name" : "STOCH",
                 "signalConfig" : {
@@ -56,11 +73,11 @@
             }
         ],
         "rules" : {
-            "BEAR" : {"BUY" : ["STOCH", "RSI"]},
-            "BULL" : {"BUY" : ["STOCH", "RSI"], "SELL" : ["RSI"]},
-            "RANGE" : {"BUY" : ["STOCH", "RSI"]},
-            "UNKNOWN" : {"BUY" : ["STOCH", "RSI"]},
-            "DEFAULT" : [{"name" : "RSI", "buy" : 30, "sell" : 70}, {"name" : "STOCH", "buy" : 20, "sell" : 80}]
+            "BEAR" : {"BUY" : ["RSI"], "SELL" : ["MACD", "STOCH", "RSI"]},
+            "BULL" : {"BUY" : ["RSI"], "SELL" : ["MACD"]},
+            "RANGE" : {"BUY" : ["STOCH"], "SELL" : ["STOCH", "RSI"]},
+            "UNKNOWN" : {"BUY" : [""], "SELL" : ["STOCH", "RSI"]},
+            "DEFAULT" : [{"name" : "RSI", "buy" : 30, "sell" : 70}, {"name" : "STOCH", "buy" : 20, "sell" : 80}, {"name" : "MACD", "buy" : 0, "sell" : 0}]
             }
     },
 
@@ -79,5 +96,8 @@
             "1m" : 60000
           },
         "port" : 3001
+    },
+    "backtest" : {
+        "fakeBUSDTotal" : 1000
     }
 }
