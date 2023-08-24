@@ -6,25 +6,25 @@
 
 
     "trading" : {
-        "markets" : ["ETH"],
-        "fractionPerStepInTime" : 0.2,
-        "minimumBUSDSpendable" : 36,
+        "markets" : ["DOT"],
+        "fractionPerStepInTime" : 0.24,
+        "minimumBUSDSpendable" : 20,
         "stepsInTime" : 1000,
-        "timeStepSize" : "4h",
+        "timeStepSize" : "2h",
         "stoploss" : {
             "mode" : "PERCENT",
             "availableModes" : ["ATR", "PERCENT"],
-            "value" : 12
+            "value" : 10
         },
         
         "profit" : {
             "mode" : "PERCENT",
             "availableModes" : ["ATR", "PERCENT"],
-            "value" : 4
+            "value" : 3
         },
         "timeWindows" : {
-            "longWindow" : "2h",
-            "shortWindow" : "1h"
+            "longWindow" : "1h",
+            "shortWindow" : "30m"
         },
         "signalsSettings" : [
             {
@@ -73,10 +73,10 @@
             }
         ],
         "rules" : {
-            "BEAR" : {"BUY" : ["RSI"], "SELL" : ["MACD", "STOCH", "RSI"]},
-            "BULL" : {"BUY" : ["RSI"], "SELL" : ["MACD"]},
-            "RANGE" : {"BUY" : ["STOCH"], "SELL" : ["STOCH", "RSI"]},
-            "UNKNOWN" : {"BUY" : [""], "SELL" : ["STOCH", "RSI"]},
+            "BEAR" : {"BUY" : ["STOCH"], "SELL" : ["MACD", "STOCH", "RSI"]},
+            "BULL" : {"BUY" : ["RSI", "STOCH"], "SELL" : ["MACD"]},
+            "RANGE" : {"BUY" : ["STOCH"], "SELL" : ["RSI"]},
+            "UNKNOWN" : {"BUY" : [""], "SELL" : ["RSI"]},
             "DEFAULT" : [{"name" : "RSI", "buy" : 30, "sell" : 70}, {"name" : "STOCH", "buy" : 20, "sell" : 80}, {"name" : "MACD", "buy" : 0, "sell" : 0}]
             }
     },

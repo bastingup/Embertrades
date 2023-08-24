@@ -64,15 +64,24 @@ export async function trading(configData) {
             let backtestBUSD = configData.backtest.fakeBUSDTotal
             let finalValue = 0
             let availableBUSDOverTime = []
+            let walletValueOverTime = []
+            var completeMarketData = []
 
-// ----------------------------------------------- DOCUMENT AT STEP IN TIME
+            // ----------------------------------------------- STEP IN TIME
             // Get all the docs of a certain step in time
             const uniqueStepsInTime = getSortedUniqueStepsInTime(docs)
             for (const step of uniqueStepsInTime) {
+
+                // Track what is happening at this point in time across assets
                 let allAssetsWithBuySignalAtThisTimestep = []
+                let walletValueAtThisPointInTime = 0
+
+                // ----------------------------------------------- DOCUMENT AT STEP IN TIME
                 for (const d of docs.filter(doc => doc.timeStamp == step)) {
+
+                    
      
-// ----------------------------------------------- SELL SELL SELL SELL SELL SELL SELL SELL SELL 
+                    // ----------------------------------------------- SELL SELL SELL SELL SELL SELL SELL SELL SELL 
                     // Are there sell signals right now for this asset at this point in time?
                     d["SELLSIGNALS"] = {}
                     const sellDec = decision(configData, d, decisionDirection.SELL)
@@ -108,7 +117,7 @@ export async function trading(configData) {
                         }
                     }
 
-// ----------------------------------------------- BUY BUY BUY BUY BUY BUY BUY BUY BUY BUY BUY 
+                    // ----------------------------------------------- BUY BUY BUY BUY BUY BUY BUY BUY BUY BUY BUY 
                     // Signals for buying
                     d["BUYSIGNALS"] = {}
                     const buyDec = decision(configData, d, decisionDirection.BUY)
@@ -125,20 +134,35 @@ export async function trading(configData) {
                     }
 
 
-// ----------------------------------------------- VALUE TRACKER
-                    // Track value over time so we can plot it
-                    trackAvailableBUSDOverTime(step, backtestBUSD)
-
+                    // ----------------------------------------------- VALUE TRACKER
                     // If last timestep, check the final value of the BUSD Wallet
                     if (d.timeStamp == docs[docs.length - 1].timeStamp) { finalValue += checkFinalBUSDValue(d, backTestOrderbook) }
 
-// ----------------------------------------------/ DOCUMENT AT STEP IN TIME
-                }
-            }
+                    // Track market data
+                    completeMarketData.push(d)
+
+                    // Track value of complete portfolio
+                    const allOpenOrders = backTestOrderbook.filter(function(order) { return order.status == "OPEN" && order.asset == d.asset; });
+                    for (let order of allOpenOrders) {walletValueAtThisPointInTime += d.close * order.qty}
+                    
+
+                } // ----------------------------------------------/ DOCUMENT AT STEP IN TIME
+
+                // After going through all assets at this step in time, how is our portfolio doing?
+                availableBUSDOverTime.push({"timestamp" : step, "value" : backtestBUSD})
+                walletValueAtThisPointInTime += backtestBUSD
+                walletValueOverTime.push({"timestamp" : step, "value" : walletValueAtThisPointInTime})
+
+                
+            } // ----------------------------------------------/ STEP IN TIME
+
+            
 
             // Save tracked values to json
             fs.writeFile("./data/busdOverTime.json", JSON.stringify(availableBUSDOverTime), function(err) { if (err) { console.log(err); } });
             fs.writeFile("./data/backtestOrderbook.json", JSON.stringify(backTestOrderbook), function(err) {if (err) { console.log(err); } });
+            fs.writeFile("./data/marketData.json", JSON.stringify(completeMarketData), function(err) {if (err) { console.log(err); } });
+            fs.writeFile("./data/walletValueOverTime.json", JSON.stringify(walletValueOverTime), function(err) {if (err) { console.log(err); } });
 
             // Add remaining BUSD to finalvalue
             finalValue += backtestBUSD
@@ -316,7 +340,7 @@ export async function backtestIndicatorSelection(configData) {
 function checkFinalBUSDValue(d, backTestOrderbook) {
     let finalValues = 0
     for (let o of backTestOrderbook) {
-        if (o.status == "OPEN") { 
+        if (o.status == "OPEN" && o.asset == d.asset) { 
             finalValues += (d.close * o.qty)
         }
     }
@@ -597,8 +621,8 @@ export function trackWalletValueOverTime(j, value) {
     walletValueOverTime.push({"timestamp" : j, "value" : value})
 }
 
-export function trackAvailableBUSDOverTime(j, value) {
-    availableBUSDOverTime.push({"timestamp" : j, "value" : value})
+export function trackAvailableBUSDOverTime(j, value, availableBUSDOverTime) {
+    return availableBUSDOverTime.push({"timestamp" : j, "value" : value})
 }
 
 export function countBacktests() {

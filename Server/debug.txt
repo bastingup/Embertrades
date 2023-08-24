@@ -1,0 +1,42 @@
+ 
+ ORDER
+ {
+    asset: 'ETH',
+    status: 'OPEN',
+    type: 'ASAP',
+    priceBuy: 1649.75,
+    priceSell: undefined,
+    lastHighestPrice: 1649.75,
+    moneySpent: 128,
+    moneyMade: undefined,
+    qty: 0.07758751325958478,
+    timestampBuy: 1692705600000,
+    timestampSell: undefined,
+    signalBuy: { RSI: true },
+    signalSell: {},
+    marketCondition: 'BEAR'
+  }
+
+
+
+
+MARKET DOC
+  {
+    close: 1666.23,
+    high: 1669.28,
+    low: 1664.43,
+    MACD: 'NO_CHANGE',
+    STOCH: 70.80357,
+    ROC: -0,
+    MA_SHORT: 1672.17,
+    MA_LONG: 1656.69,
+    ADX_PDI_SHORT: 0.1995,
+    ADX_MDI_SHORT: 0.283,
+    ADX_RESULT_SHORT: 47.8199,
+    ADX_TREND_SHORT: 'BEAR',
+    RSI: 46.4084,
+    RSI_CROSS: 'NONE',
+    timeStamp: 1692878400000,
+    asset: 'ETH',
+    _id: 'nGSY767QmXH2niqa'
+}
