@@ -1,20 +1,20 @@
 {
     "name" : "Embertrades",
-    "v" : 0.2,
+    "v" : 0.3,
     "mode" : "backtest",
     "availableModes" : ["dev", "backtest", "live_trading", "simulative_trading"],
 
 
     "trading" : {
-        "markets" : ["DOT"],
-        "fractionPerStepInTime" : 0.24,
-        "minimumBUSDSpendable" : 20,
+        "markets" : ["BTC"],
+        "fractionPerStepInTime" : 0.2,
+        "minimumBUSDSpendable" : 12,
         "stepsInTime" : 1000,
         "timeStepSize" : "2h",
         "stoploss" : {
             "mode" : "PERCENT",
             "availableModes" : ["ATR", "PERCENT"],
-            "value" : 10
+            "value" : 5
         },
         
         "profit" : {
@@ -75,7 +75,7 @@
         "rules" : {
             "BEAR" : {"BUY" : ["STOCH"], "SELL" : ["MACD", "STOCH", "RSI"]},
             "BULL" : {"BUY" : ["RSI", "STOCH"], "SELL" : ["MACD"]},
-            "RANGE" : {"BUY" : ["STOCH"], "SELL" : ["RSI"]},
+            "RANGE" : {"BUY" : [""], "SELL" : ["RSI", "STOCH", "MACD"]},
             "UNKNOWN" : {"BUY" : [""], "SELL" : ["RSI"]},
             "DEFAULT" : [{"name" : "RSI", "buy" : 30, "sell" : 70}, {"name" : "STOCH", "buy" : 20, "sell" : 80}, {"name" : "MACD", "buy" : 0, "sell" : 0}]
             }
@@ -98,6 +98,6 @@
         "port" : 3001
     },
     "backtest" : {
-        "fakeBUSDTotal" : 1000
+        "fakeBUSDTotal" : 2000
     }
 }
