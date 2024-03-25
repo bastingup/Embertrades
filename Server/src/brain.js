@@ -1,10 +1,68 @@
 import * as colors from "./colors.js"
+import * as markets from './markets.js';
 import * as server from "./server.js"
 import * as dbmanagement from "./databaseManagement.js"
 import * as indicators from './indicators.js'
 import { config } from "dotenv"
 import {default as fs} from "fs";
+import * as https from "https"
 
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------- EMBERWAVE DCA --------------------
+// --------------------------------------------------
+// --------------------------------------------------
+export async function handlePositionOpening(configData) {
+    await getFearAndGreedIndex()
+    //buildAllInformation(configData, configData.dcaSignalConfig.whiteListed)
+}
+export async function handlePositionClosing(configData) {
+}
+
+async function buildAllInformation(configData, assets) {
+    assets.forEach(async function(ASSET) {
+        // This is the historic market data
+        // e.G. if we get last 5 hours and it is 9.13am right now, it will get us the data for the entries:
+        // 5am, 6am, 7am, 8am, 9am -> This way we can build our trading signals with the hsitoric data of the past "full" steps in time
+        // and have one more datapoint that is up to date right now in this cycle, like real time data so we see how indicators have changed right now
+        let marketData = await markets.getHistoricData(configData, ASSET)
+
+        // Current pricate as last entry in our market data
+        const currentMarketData = await markets.getCurrentPrice(configData, ASSET)
+        marketData[0].push(markets.buildTickerArrayForHistoricMerge(currentMarketData)) 
+
+        // Turn market data array into candles
+        const candles = markets.buildCandlesFromDownloadedData(marketData[0]);
+
+        // Build Indicator signals
+        const indicatorResults = indicators.buildIndicatorSignals(configData, ASSET, candles)
+        //console.log(indicatorResults)
+
+        // What do all the things tell us to do
+        const signals = indicators.signalResultsToTradingSignals(configData, indicatorResults)
+        console.log(indicatorResults["STOCH"], ASSET)
+    })
+}
+
+async function loadOpenPositions() {
+
+}
+
+async function getFearAndGreedIndex() {
+    const url = "https://api.alternative.me/fng/?limit=10"
+
+    await https.get(url, res => {
+        res.on('data', (d) => {
+            console.log(JSON.parse(d))
+        });
+    })
+; 
+    
+}
+
+// --------------------------------------------------
+// --------------- ALLLLLLLLLLL ISSSS LEGACYYYYYYYYYYYYY ---------------------
+// --------------------------------------------------
 // --------------------------------------------------
 // --------------------------------------------------
 // --------------- BACKEND SOLO ---------------------
@@ -41,6 +99,10 @@ export async function trading(configData) {
             message += ". LIVE TRADING. We are making trades, let's goooo."
             modeMessage(message)
             break
+        case "backtest_2":
+            message += ". LIVE TRADING. We are making trades, let's goooo."
+            modeMessage(message)
+            break
         case "simulative_trading":
             message += ". SIMULATIVE TRADING. Same as live trading but without actually making real trades"
             modeMessage(message)
@@ -53,6 +115,17 @@ export async function trading(configData) {
 
     // Get the data from db
     dbmanagement.db.markets.find({}).sort({ timeStamp: 1 }).exec(function (err, docs) {
+
+        // Everything needed for backtesting
+        let backTestOrderbook = []
+        let backtestBUSD = configData.backtest.fakeBUSDTotal
+        let finalValue = 0
+        let availableBUSDOverTime = []
+        let walletValueOverTime = []
+        var completeMarketData = []
+
+         // Get all the docs of a certain step in time
+        const uniqueStepsInTime = getSortedUniqueStepsInTime(docs)
 
         // ------------------------------------------
         // ------------- BACKTEST
@@ -170,6 +243,25 @@ export async function trading(configData) {
             console.log(colors.importantInfoLog + "BRAIN - Finished on-the-fly-backtesting for all available data.")
         }
 
+        if (configData.mode == "backtest_2") {
+            // ----------------------------------------------- STEP IN TIME
+            for (const step of uniqueStepsInTime) {
+                // Track what is happening at this point in time across assets
+                let allAssetsWithBuySignalAtThisTimestep = []
+                let walletValueAtThisPointInTime = 0
+                // ----------------------------------------------- DOCUMENT AT STEP IN TIME
+                for (const d of docs.filter(doc => doc.timeStamp == step)) {
+            
+
+                    // BACKTEST v2
+                    console.log(d)
+
+
+
+                }
+            }
+
+        }
 
         // ------------------------------------------
         // ------------- SIMULATIVE & LIVE TRADING
@@ -182,6 +274,17 @@ export async function trading(configData) {
         }
     })
 }
+
+
+function determineBuySignals() {
+    d["BUYSIGNALS"] = {}
+    const buyDec = decision(configData, d, decisionDirection.BUY)
+    for (const e of buyDec){d["BUYSIGNALS"][Object.keys(e)[0]] = Object.values(e)[0]}
+    if (buyDec.some(c => Object.values(c)[0] == true)) {allAssetsWithBuySignalAtThisTimestep.push(d)}
+
+}
+
+
 
 function getWalletValue(ds, i, wallet) {
     let finalWalletValue = wallet["BUSD"]

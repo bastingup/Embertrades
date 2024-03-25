@@ -21,14 +21,17 @@ async function main() {
     welcomeMessage(configData)
 
     // -------------- EVENT SUBSCRIPTIONS
+    // THESE ARE FINE AS THEY ARE
     server.eventBus.on('finished-main-function', brain.mainEventCallback); // Callback when main executed succesfully
     server.eventBus.on('loaded-db', dbmanagement.giveFeedbackDBAlive); // If a db is alive, it registeres via this event
-    server.eventBus.on('all-db-alive', buildMarketInformation); // All db are alive, proceed with workflow
-    server.eventBus.once('all-db-alive', registerForNextInterval) // Register only once to kick off setInterval in the beginning
-    server.eventBus.on('got-market-data', indicators.buildTradingSignals); // Market data has been loaded, build indicators
-    server.eventBus.on('download-market-data', markets.fetchMarketData); // Proceed to fetch market data
-    server.eventBus.on('next-run', buildMarketInformation); // setInterval ran through, restart the workflow loop
-    server.eventBus.on('all-assets-done', brain.trading); // Which indicator combination would have made the most paper
+    server.eventBus.on('all-db-alive', allDbAreAliveRegisterClicks); // All db are alive, proceed with workflow
+
+
+    // THESE NEED REWORKING
+    //server.eventBus.on('got-market-data', indicators.buildTradingSignals); // Market data has been loaded, build indicators
+    //server.eventBus.on('download-market-data', markets.fetchMarketData); // Proceed to fetch market data
+    //server.eventBus.on('next-run', buildMarketInformation); // setInterval ran through, restart the workflow loop
+    //server.eventBus.on('all-assets-done', brain.trading); // Which indicator combination would have made the most paper
 
 
     // --------------------------------------------------
@@ -65,19 +68,26 @@ async function main() {
 // --------------- MAIN FUNCTIONS -------------------
 // --------------------------------------------------
 
-async function buildMarketInformation(configData) {
+async function allDbAreAliveRegisterClicks(configData) {
     console.log(colors.infoLog + "______________________________________________");
-    console.log(colors.infoLog + "MAIN - Starting new round. Time and date:", new Date().toUTCString())
-    markets.checkLastTimestampPerAsset(configData)
+    console.log(colors.infoLog + "MAIN - All DBs are alive. We can proceed at:", new Date().toUTCString())
+    
+    // Check for positions to OPEN
+    setInterval(brain.handlePositionClosing, configData.tech.unixTimeToLookBack[configData.dcaSignalConfig.handleClosing.timerToClick], configData);
+
+    // Check for positions to CLOSE
+    setInterval(brain.handlePositionOpening, configData.tech.unixTimeToLookBack[configData.dcaSignalConfig.handleOpening.timerToClick], configData);
+
+    // Chcek for coins that show signs of PUMP
+    // TODO
+
+    console.log(colors.infoLog + "MAIN - Registered opening and closing handle function.");
+    console.log(colors.infoLog + "MAIN - Opening runs every:", configData.dcaSignalConfig.handleOpening.timerToClick);
+    console.log(colors.infoLog + "MAIN - Closing runs every:", configData.dcaSignalConfig.handleClosing.timerToClick);
+
+    brain.handlePositionOpening(configData)
 }
 
-
-async function registerForNextInterval(configData) {
-    // Get time until next tick plus a few ms for good measure
-    const delayTime = configData.tech.unixTimeToLookBack[configData.trading.timeStepSize] + 5
-    console.log(colors.serverLog + "MAIN - Registered setInterval. Running every", delayTime.toString(), "unix / every", configData.trading.timeStepSize);
-    setInterval(buildMarketInformation, delayTime, configData);
-}
 
 function welcomeMessage(configData) {
     console.log(colors.helloLog + "______________________________________________")

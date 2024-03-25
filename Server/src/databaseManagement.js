@@ -8,22 +8,20 @@ let registeredDatabases = 0
 export function loadDatabase(configData) {
 
     // Load database
-    var localDbPath = './db/local.db'
+    var localDbPath = './db/main.db'
     db = createNewDatabase(localDbPath);
 
     // Orderbook
-    db.orderbook = new Datastore('./db/orderbook.db');
-    db.markets = new Datastore('./db/markets.db');
-    db.testOrderbook = new Datastore('./db/testOrderbook.db');
+    db.openPositions = new Datastore('./db/openPositions.db');
+    db.closedPositions = new Datastore('./db/closedPositions.db');
 
-    db.orderbook.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
-    db.markets.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
-    db.testOrderbook.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
+    db.openPositions.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
+    db.closedPositions.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
 }
 
 export function giveFeedbackDBAlive(configData) {
     registeredDatabases = registeredDatabases + 1
-    if (registeredDatabases === 3) {
+    if (registeredDatabases === 2) {
         server.eventBus.emit("all-db-alive", null, configData)
         registeredDatabases = 0
     }
@@ -32,4 +30,3 @@ export function giveFeedbackDBAlive(configData) {
 function createNewDatabase(localDbPath) {
     return new Datastore({ filename: localDbPath});
 }
-

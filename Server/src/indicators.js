@@ -7,6 +7,76 @@ import * as server from "./server.js"
 
 // --------------------------------------------------
 // --------------------------------------------------
+// --------------- EMBERWAVE DCA --------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
+export async function buildIndicatorSignals(configData, asset, candles) {
+
+  let indicatorResults = {}
+  let indicatorName = ""
+
+  // STOCH
+  indicatorName = "STOCH"
+  indicatorResults[indicatorName] = indicatorSTOCH(
+    configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
+    candles)
+
+  // MACD
+  indicatorName = "MACD"
+  indicatorResults[indicatorName] = indicatorMACD(
+    configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
+    candles)
+
+  // ROC
+  indicatorName = "ROC"
+  indicatorResults[indicatorName] = indicatorROC(
+    configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
+    candles)
+
+  // MADOUBLE
+  indicatorName = "MADOUBLE"
+  indicatorResults[indicatorName] = {"SHORT" : null, "LONG" : null}
+  indicatorResults[indicatorName].SHORT = indicatorMA(configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.shortma, candles)
+  indicatorResults[indicatorName].LONG = indicatorMA(configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.longma, candles)
+
+  // ADX
+  indicatorName = "ADX"
+  indicatorResults[indicatorName] = {"PDI" : null, "MDI" : null, "ADX_R_SHORT" : null, "ADX_TREND_SHORT" : null}
+  const r = indicatorADX(configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig,
+                         configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.currentMarketInterval,
+                         candles)
+  indicatorResults[indicatorName].PDI_SHORT = r.p
+  indicatorResults[indicatorName].MDI_SHORT = r.m
+  indicatorResults[indicatorName].ADX_R_SHORT = r.f
+  indicatorResults[indicatorName].ADX_TREND_SHORT = r.t
+
+  // RSI
+  indicatorName = "RSI"
+  indicatorResults[indicatorName] = {"RSI" : null, "CROSS" : null}
+  const s = indicatorRSI(configData, configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.interval, candles)
+  indicatorResults[indicatorName].RSI = s.results
+  indicatorResults[indicatorName].CROSS = s.crosses
+
+  // ATR
+  indicatorName = "ATR"
+  indicatorResults[indicatorName] = indicatorATR(configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0], candles)
+
+  return indicatorResults
+}
+
+export function signalResultsToTradingSignals(configData, indicatorResults) {
+  for (const [key, value] of Object.entries(indicatorResults)) {
+    switch (key) {
+      case "STOCH":
+        break
+    }
+  }
+}
+
+
+// --------------------------------------------------
+// --------------------------------------------------
 // --------------- BACKEND SOLO ---------------------
 // --------------------------------------------------
 // --------------------------------------------------
@@ -90,6 +160,11 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
         indicatorResults[selectedSignals[j].name].RSI = s.results
         indicatorResults[selectedSignals[j].name].CROSS = s.crosses
         break 
+        
+      case "ATR" :
+        console.log(colors.infoLog + "INDICATORS - Building ATR for", asset)
+        indicatorResults[selectedSignals[j].name] = indicatorATR(selectedSignals[j], candles)
+        break
     }
   }
 
@@ -120,6 +195,8 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
     candles[c].RSI = parseFloat(indicatorResults.RSI.RSI[c])
     candles[c].RSI_CROSS = indicatorResults.RSI.CROSS[c]
     
+    // ATR
+    candles[c].ATR = parseFloat(indicatorResults.ATR[c])
 
     // General Info
     candles[c].timeStamp = data[0][f][0]
@@ -222,6 +299,21 @@ function indicatorROC(conf, candles) {
     rocResults.push(r)
   }
   return rocResults
+}
+
+// ATR
+function indicatorATR(conf, candles) {
+  const atr = new ATR(conf.signalConfig.interval)
+  const atrResults = []
+  for (const candle of candles) {
+    const result = atr.update(candle);
+    let r = "Unstable"
+    if (atr.isStable && result) {
+      r = atr.getResult().toFixed(2)
+    }
+    atrResults.push(r)
+  }
+  return atrResults
 }
 
 // MA

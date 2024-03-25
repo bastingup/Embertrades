@@ -8,6 +8,58 @@ import * as colors from "./colors.js"
 // Client 
 export var binanceClient = null
 
+
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------- EMBERWAVE DCA --------------------
+// --------------------------------------------------
+// --------------------------------------------------
+export async function getHistoricData(configData, asset) {
+  // Build market for asset at index
+  const market = asset + "/" + configData.dcaSignalConfig.baseCurrency
+  // Since when do we need the data? This is from now, n steps in time backwards as defined in config file
+  let since = (Date.now() - ((configData.tech.unixTimeToLookBack[configData.dcaSignalConfig.handleOpening.timeStepSize]) * configData.dcaSignalConfig.handleOpening.stepsInTime));
+  try {
+    return await Promise.all([
+      binanceClient.fetch_ohlcv(market, configData.dcaSignalConfig.handleOpening.timeStepSize, since = since)
+    ]);
+  } catch (e) {
+    console.log(colors.infoLog + "MARKETS - " + e)}
+}
+
+export async function getCurrentPrice(configData, asset) {
+  const market = asset + "/" + configData.dcaSignalConfig.baseCurrency
+  try {
+    return await Promise.all([
+      binanceClient.fetch_ticker(market)
+    ]);
+  } catch (e) {
+    console.log(colors.infoLog + "MARKETS - " + e)}
+}
+
+export function buildTickerArrayForHistoricMerge(currentMarketData) {
+  return ([
+    currentMarketData[0].timestamp,
+    currentMarketData[0].open,
+    currentMarketData[0].high,
+    currentMarketData[0].low,
+    currentMarketData[0].last,
+    undefined
+  ])
+}
+
+export function buildCandlesFromDownloadedData(data) {
+  var candles = [];
+  for (var i = 0; i < data.length; i++) {
+    candles.push({
+      "close" : data[i][4],
+      "high" : data[i][2],
+      "low" : data[i][3]
+    })
+  }
+  return candles;
+}
+
 // --------------------------------------------------
 // --------------------------------------------------
 // --------------- BACKEND SOLO ---------------------
@@ -118,29 +170,8 @@ function needToFillUpDownloadedDataWithDBData(configData, limit) {
   return false
 }
 
-async function getHistoricData(configData, asset, since, limit) {
-  // Build market for asset at index
-  const market = asset + "/BUSD"
-  try {
-    return await Promise.all([
-      binanceClient.fetch_ohlcv(market, configData.trading.timeStepSize, since = since, limit = limit)
-    ]);
-  } catch (e) {
-    console.log(colors.infoLog + "MARKETS - " + e)}
-}
 
-// --- CALLED SOMEWHERE ELSE ---
-export function buildCandlesFromDownloadedData(data) {
-  var candles = [];
-  for (var i = 0; i < data.length; i++) {
-    candles.push({
-      "close" : data[i][4],
-      "high" : data[i][2],
-      "low" : data[i][3]
-    })
-  }
-  return candles;
-}
+
 
 export function buildCandlesFromDBData(data) {
 
