@@ -55,7 +55,9 @@ export function buildCandlesFromDownloadedData(data) {
     candles.push({
       "close" : data[i][4],
       "high" : data[i][2],
-      "low" : data[i][3]
+      "low" : data[i][3],
+      "open" : data[i][1],
+      "open" : data[i][5]
     })
   }
   return candles;

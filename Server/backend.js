@@ -8,6 +8,14 @@ import * as brain from "./src/brain.js"
 import * as colors from "./src/colors.js"
 // #endregion
 
+// Technical Indicators
+// https://www.britannica.com/money/technical-indicator-types
+// trendyways
+// https://www.npmjs.com/package/trendyways
+// trading signals
+// https://www.npmjs.com/package/trading-signals
+
+
 async function main() {
 
 
@@ -25,13 +33,6 @@ async function main() {
     server.eventBus.on('finished-main-function', brain.mainEventCallback); // Callback when main executed succesfully
     server.eventBus.on('loaded-db', dbmanagement.giveFeedbackDBAlive); // If a db is alive, it registeres via this event
     server.eventBus.on('all-db-alive', allDbAreAliveRegisterClicks); // All db are alive, proceed with workflow
-
-
-    // THESE NEED REWORKING
-    //server.eventBus.on('got-market-data', indicators.buildTradingSignals); // Market data has been loaded, build indicators
-    //server.eventBus.on('download-market-data', markets.fetchMarketData); // Proceed to fetch market data
-    //server.eventBus.on('next-run', buildMarketInformation); // setInterval ran through, restart the workflow loop
-    //server.eventBus.on('all-assets-done', brain.trading); // Which indicator combination would have made the most paper
 
 
     // --------------------------------------------------

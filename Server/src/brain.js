@@ -7,6 +7,7 @@ import { config } from "dotenv"
 import {default as fs} from "fs";
 import * as https from "https"
 import fetch from 'node-fetch';
+import * as ways from "trendyways";
 
 // --------------------------------------------------
 // --------------------------------------------------
@@ -14,8 +15,10 @@ import fetch from 'node-fetch';
 // --------------------------------------------------
 // --------------------------------------------------
 export async function handlePositionOpening(configData) {
-    const fearAndGreed = await getFearAndGreedIndex()
-    const brainCell = await buildAllInformation(configData, configData.dcaSignalConfig.whiteListed[0])
+    let brainCell = await buildAllInformation(configData, configData.dcaSignalConfig.whiteListed[0])
+    brainCell.fearAndGrees = await getFearAndGreedIndex()
+
+    console.log(brainCell)
 }
 
 export async function handlePositionClosing(configData) {
@@ -35,6 +38,7 @@ async function buildAllInformation(configData, ASSET, dateRange = undefined) {
 
     // Turn market data array into candles
     const candles = markets.buildCandlesFromDownloadedData(marketData[0]);
+    const supRes = ways.floorPivots(candles.map(({ high, low, close }) => ({"h": high, "l": low, "c": close}))).splice(-1)[0].floor
 
     // Build Indicator signals
     let indicatorResults;
@@ -42,12 +46,12 @@ async function buildAllInformation(configData, ASSET, dateRange = undefined) {
 
     // What do all the things tell us to do
     const signals = indicators.signalResultsToTradingSignals(configData, indicatorResults)
-    console.log(signals)
 
     return {"candles": candles,
             "market": marketData,
             "indicators": indicatorResults,
-            "signals": signals}
+            "signals": signals,
+            "supportResistance": supRes}
 }
 
 async function loadOpenPositions() {
@@ -60,6 +64,7 @@ async function getFearAndGreedIndex() {
     .then(response => response.json())
     .catch(error => console.error('Error:', error));
 }
+
 
 // --------------------------------------------------
 // --------------- ALLLLLLLLLLL ISSSS LEGACYYYYYYYYYYYYY ---------------------

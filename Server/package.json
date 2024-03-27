@@ -23,6 +23,7 @@
     "node-fetch": "^3.3.2",
     "nodemon": "^2.0.19",
     "qs": "^6.10.2",
-    "trading-signals": "^3.2.0"
+    "trading-signals": "^3.2.0",
+    "trendyways": "^1.0.1"
   }
 }
