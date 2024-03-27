@@ -16,12 +16,12 @@ import fetch from 'node-fetch';
 export async function handlePositionOpening(configData) {
     const fearAndGreed = await getFearAndGreedIndex()
     const brainCell = await buildAllInformation(configData, configData.dcaSignalConfig.whiteListed[0])
-    //console.log(brainCell.candles)
 }
+
 export async function handlePositionClosing(configData) {
 }
 
-async function buildAllInformation(configData, ASSET) {
+async function buildAllInformation(configData, ASSET, dateRange = undefined) {
 
     // This is the historic market data
     // e.G. if we get last 5 hours and it is 9.13am right now, it will get us the data for the entries:
@@ -42,7 +42,7 @@ async function buildAllInformation(configData, ASSET) {
 
     // What do all the things tell us to do
     const signals = indicators.signalResultsToTradingSignals(configData, indicatorResults)
-    //console.log(signals)
+    console.log(signals)
 
     return {"candles": candles,
             "market": marketData,

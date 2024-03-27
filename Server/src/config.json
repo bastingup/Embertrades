@@ -9,6 +9,7 @@
         "signalsSettings" : [
             {
                 "name" : "MACD",
+                "type" : "MOMENTUM",
                 "signalConfig" : {
                     "short" : 5,
                     "long" : 2,
@@ -17,6 +18,7 @@
             },
             {
                 "name" : "STOCH",
+                "type" : "MOMENTUM",
                 "signalConfig" : {
                     "overSold" : 20,
                     "overbought" : 80,
@@ -26,12 +28,14 @@
             },
             {
                 "name" : "ROC",
+                "type" : "VOLATILITY",
                 "signalConfig" : {
                     "interval" : 24
                 }
             },
             {
                 "name" : "MADOUBLE",
+                "type" : "TREND",
                 "signalConfig" : {
                     "shortma" : 4,
                     "longma" : 12
@@ -39,6 +43,7 @@
             },
             {
                 "name" : "ADX",
+                "type" : "MARKET",
                 "signalConfig" : {
                     "currentMarketInterval" : 14,
                     "longMarketInterval" : 48,
@@ -50,6 +55,7 @@
             },
             {
                 "name" : "RSI",
+                "type" : "MOMENTUM",
                 "signalConfig" : {
                     "overSold" : 30,
                     "overbought" : 70,
@@ -58,6 +64,7 @@
             },
             {
                 "name" : "ATR",
+                "type" : "VOLATILITY",
                 "signalConfig" : {
                     "interval" : 14
                 }

@@ -42,14 +42,14 @@ export async function buildIndicatorSignals(configData, asset, candles) {
 
   // ADX
   indicatorName = "ADX"
-  indicatorResults[indicatorName] = {"PDI" : null, "MDI" : null, "ADX_R_SHORT" : null, "ADX_TREND_SHORT" : null}
+  indicatorResults[indicatorName] = {"PDI" : null, "MDI" : null, "ADX_R" : null, "ADX_TREND" : null}
   const r = indicatorADX(configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig,
                          configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.currentMarketInterval,
                          candles)
-  indicatorResults[indicatorName].PDI_SHORT = r.p
-  indicatorResults[indicatorName].MDI_SHORT = r.m
-  indicatorResults[indicatorName].ADX_R_SHORT = r.f
-  indicatorResults[indicatorName].ADX_TREND_SHORT = r.t
+  indicatorResults[indicatorName].PDI = r.p
+  indicatorResults[indicatorName].MDI = r.m
+  indicatorResults[indicatorName].ADX_R = r.f
+  indicatorResults[indicatorName].ADX_TREND = r.t
 
   // RSI
   indicatorName = "RSI"
@@ -67,31 +67,37 @@ export async function buildIndicatorSignals(configData, asset, candles) {
 
 export function signalResultsToTradingSignals(configData, indicatorResults) {
   let result = {}
-  let signal = undefined
 
   for (const [key, value] of Object.entries(indicatorResults)) {
-    const lastEntry = indicatorResults[key].length - 1
+    let signal = {}
     let last;
-    const settings = getSignalSettingsByName(configData, key).signalConfig
+    const lastEntry = indicatorResults[key].length - 1
+    const settings = getSignalSettingsByName(configData, key)
+    signal.TYPE = settings.type
 
-    // true = buy, false = sell, undefined = other
     switch (key) {
       case "STOCH":
         last = indicatorResults[key][lastEntry]
-        signal = last > settings.overbought ? true : last < settings.oversold ? false : undefined;
+        signal.TRADE = last > settings.signalConfig.overbought ? decisionSignal.SELL : last < settings.signalConfig.oversold ? decisionSignal.BUY : decisionSignal.NONE;
         break
       case "MACD":
         last = indicatorResults[key][lastEntry]
         const previousLast = indicatorResults[key][lastEntry - 1]
         const lastSign = Math.sign(last)
         const previousLatSign = Math.sign(previousLast)
-        signal = lastSign > previousLatSign ? true : lastSign < previousLatSign ? false : undefined;
+        signal.TRADE = lastSign > previousLatSign ? decisionSignal.SELL : lastSign < previousLatSign ? decisionSignal.BUY : decisionSignal.NONE;
         break
       case "ADX":
-        for (const [p, value] of Object.entries(indicatorResults[key])) {
-          console.log(p)
-        }
-        console.log(indicatorResults[key])
+        // Maybe re-do when decided what to use ADX for really
+        const a = indicatorResults[key].ADX_TREND.slice(-7)
+        let resStates = Array.from(new Set(a.map((item) => item.state))).reduce((acc,curr)=> (acc[curr]=0,acc),{});
+        let resStrengths = Array.from(new Set(a.map((item) => item.strength))).reduce((acc,curr)=> (acc[curr]=0,acc),{});
+        for (let i = 0; i < a.length; i++) {resStates[a[i].state] += 1, resStrengths[a[i].strength] += 1}
+        const keysSorted = Object.keys(resStates).sort(function(a,b){return resStates[b]-resStates[a]}) // sorting
+        signal.TRADE = indicatorResults[key].ADX_TREND.slice(-1)
+        break
+      default:
+        signal.TRADE = decisionSignal.NONE
         break
     }
     result[key] = signal
@@ -111,6 +117,7 @@ function getSignalSettingsByName(configData, name) {
 
 let registeredAssets = 0
 export const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
+export const decisionSignal = {"BUY": "BUY", "SELL": "SELL", "NONE" : "NONE"}
 export const trendStrength = {"NO_TREND": "NO_TREND", "TREND": "TREND", "STRONG_TREND" : "STRONG_TREND", "EXT_TREND" : "EXT_TREND", "UNKNOWN" : "UNKNOWN"}
 export const crosses = {"DOWNTOP" : "DOWNTOP", "UPLOW" : "UPLOW", "STAYUP" : "STAYUP", "STAYDOWN" : "STAYDOWN", "UPTOP" : "UPTOP", "DOWNLOW" : "DOWNLOW", "NONE" : "NONE"}
 export const macdState = {"CROSSED_TO_POSITIVE": "CROSSED_TO_POSITIVE", "CROSSED_TO_NEGATIVE": "CROSSED_TO_NEGATIVE", "ZERO_ERROR": "ZERO_ERROR", "NO_CHANGE": "NO_CHANGE"}
@@ -174,12 +181,12 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
         console.log(colors.infoLog + "INDICATORS - Building ADX indicator for", asset)
 
         // Short term market
-        indicatorResults[selectedSignals[j].name] = {"PDI" : null, "MDI" : null, "ADX_R_SHORT" : null, "ADX_TREND_SHORT" : null}
+        indicatorResults[selectedSignals[j].name] = {"PDI" : null, "MDI" : null, "ADX_R" : null, "ADX_TREND" : null}
         const r = indicatorADX(selectedSignals[j].signalConfig, selectedSignals[j].signalConfig.currentMarketInterval, candles)
-        indicatorResults[selectedSignals[j].name].PDI_SHORT = r.p
-        indicatorResults[selectedSignals[j].name].MDI_SHORT = r.m
-        indicatorResults[selectedSignals[j].name].ADX_R_SHORT = r.f
-        indicatorResults[selectedSignals[j].name].ADX_TREND_SHORT = r.t
+        indicatorResults[selectedSignals[j].name].PDI = r.p
+        indicatorResults[selectedSignals[j].name].MDI = r.m
+        indicatorResults[selectedSignals[j].name].ADX_R = r.f
+        indicatorResults[selectedSignals[j].name].ADX_TREND = r.t
         break
 
       case "RSI" :
@@ -215,10 +222,10 @@ export function buildTradingSignals(configData, asset, data, limit, docs) {
     candles[c].MA_LONG = parseFloat(indicatorResults.MADOUBLE.LONG[c])
 
     // ADX Shortterm
-    candles[c].ADX_PDI_SHORT = parseFloat(indicatorResults.ADX.PDI_SHORT[c])
-    candles[c].ADX_MDI_SHORT = parseFloat(indicatorResults.ADX.MDI_SHORT[c])
-    candles[c].ADX_RESULT_SHORT = parseFloat(indicatorResults.ADX.ADX_R_SHORT[c])
-    candles[c].ADX_TREND_SHORT = indicatorResults.ADX.ADX_TREND_SHORT[c]
+    candles[c].ADX_PDI = parseFloat(indicatorResults.ADX.PDI[c])
+    candles[c].ADX_MDI = parseFloat(indicatorResults.ADX.MDI[c])
+    candles[c].ADX_RESULT = parseFloat(indicatorResults.ADX.ADX_R[c])
+    candles[c].ADX_TREND = indicatorResults.ADX.ADX_TREND[c]
 
     // RSI
     candles[c].RSI = parseFloat(indicatorResults.RSI.RSI[c])
