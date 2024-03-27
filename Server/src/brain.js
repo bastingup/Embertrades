@@ -16,7 +16,8 @@ import * as ways from "trendyways";
 // --------------------------------------------------
 export async function handlePositionOpening(configData) {
     let brainCell = await buildAllInformation(configData, configData.dcaSignalConfig.whiteListed[0])
-    brainCell.fearAndGrees = await getFearAndGreedIndex()
+    const fearGreed = await getFearAndGreedIndex()
+    brainCell.fearAndGreed = fearGreed.data
 
     console.log(brainCell)
 }
