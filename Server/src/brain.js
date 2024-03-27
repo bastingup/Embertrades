@@ -6,6 +6,7 @@ import * as indicators from './indicators.js'
 import { config } from "dotenv"
 import {default as fs} from "fs";
 import * as https from "https"
+import fetch from 'node-fetch';
 
 // --------------------------------------------------
 // --------------------------------------------------
@@ -13,35 +14,40 @@ import * as https from "https"
 // --------------------------------------------------
 // --------------------------------------------------
 export async function handlePositionOpening(configData) {
-    await getFearAndGreedIndex()
-    //buildAllInformation(configData, configData.dcaSignalConfig.whiteListed)
+    const fearAndGreed = await getFearAndGreedIndex()
+    const brainCell = await buildAllInformation(configData, configData.dcaSignalConfig.whiteListed[0])
+    //console.log(brainCell.candles)
 }
 export async function handlePositionClosing(configData) {
 }
 
-async function buildAllInformation(configData, assets) {
-    assets.forEach(async function(ASSET) {
-        // This is the historic market data
-        // e.G. if we get last 5 hours and it is 9.13am right now, it will get us the data for the entries:
-        // 5am, 6am, 7am, 8am, 9am -> This way we can build our trading signals with the hsitoric data of the past "full" steps in time
-        // and have one more datapoint that is up to date right now in this cycle, like real time data so we see how indicators have changed right now
-        let marketData = await markets.getHistoricData(configData, ASSET)
+async function buildAllInformation(configData, ASSET) {
 
-        // Current pricate as last entry in our market data
-        const currentMarketData = await markets.getCurrentPrice(configData, ASSET)
-        marketData[0].push(markets.buildTickerArrayForHistoricMerge(currentMarketData)) 
+    // This is the historic market data
+    // e.G. if we get last 5 hours and it is 9.13am right now, it will get us the data for the entries:
+    // 5am, 6am, 7am, 8am, 9am -> This way we can build our trading signals with the hsitoric data of the past "full" steps in time
+    // and have one more datapoint that is up to date right now in this cycle, like real time data so we see how indicators have changed right now
+    let marketData = await markets.getHistoricData(configData, ASSET)
 
-        // Turn market data array into candles
-        const candles = markets.buildCandlesFromDownloadedData(marketData[0]);
+    // Current pricate as last entry in our market data
+    const currentMarketData = await markets.getCurrentPrice(configData, ASSET)
+    marketData[0].push(markets.buildTickerArrayForHistoricMerge(currentMarketData)) 
 
-        // Build Indicator signals
-        const indicatorResults = indicators.buildIndicatorSignals(configData, ASSET, candles)
-        //console.log(indicatorResults)
+    // Turn market data array into candles
+    const candles = markets.buildCandlesFromDownloadedData(marketData[0]);
 
-        // What do all the things tell us to do
-        const signals = indicators.signalResultsToTradingSignals(configData, indicatorResults)
-        console.log(indicatorResults["STOCH"], ASSET)
-    })
+    // Build Indicator signals
+    let indicatorResults;
+    await indicators.buildIndicatorSignals(configData, ASSET, candles).then(function(data) {indicatorResults = data})
+
+    // What do all the things tell us to do
+    const signals = indicators.signalResultsToTradingSignals(configData, indicatorResults)
+    //console.log(signals)
+
+    return {"candles": candles,
+            "market": marketData,
+            "indicators": indicatorResults,
+            "signals": signals}
 }
 
 async function loadOpenPositions() {
@@ -50,14 +56,9 @@ async function loadOpenPositions() {
 
 async function getFearAndGreedIndex() {
     const url = "https://api.alternative.me/fng/?limit=10"
-
-    await https.get(url, res => {
-        res.on('data', (d) => {
-            console.log(JSON.parse(d))
-        });
-    })
-; 
-    
+    return await fetch(url)
+    .then(response => response.json())
+    .catch(error => console.error('Error:', error));
 }
 
 // --------------------------------------------------

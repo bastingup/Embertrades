@@ -6,62 +6,68 @@
         "whiteListed" : ["ETH", "DOT", "SOL"],
         "baseCurrency" : "USDT",
         "realTrading" : false,
+        "signalsSettings" : [
+            {
+                "name" : "MACD",
+                "signalConfig" : {
+                    "short" : 5,
+                    "long" : 2,
+                    "signal" : 9
+                }
+            },
+            {
+                "name" : "STOCH",
+                "signalConfig" : {
+                    "overSold" : 20,
+                    "overbought" : 80,
+                    "periodK" : 14,
+                    "periodD" : 1
+                }
+            },
+            {
+                "name" : "ROC",
+                "signalConfig" : {
+                    "interval" : 24
+                }
+            },
+            {
+                "name" : "MADOUBLE",
+                "signalConfig" : {
+                    "shortma" : 4,
+                    "longma" : 12
+                }
+            },
+            {
+                "name" : "ADX",
+                "signalConfig" : {
+                    "currentMarketInterval" : 14,
+                    "longMarketInterval" : 48,
+                    "threshold" : 25,
+                    "threshes": {
+                        "strong": 25, "veryStrong": 50, "extremelyStrong": 75
+                    }
+                }
+            },
+            {
+                "name" : "RSI",
+                "signalConfig" : {
+                    "overSold" : 30,
+                    "overbought" : 70,
+                    "interval" : 14
+                }
+            },
+            {
+                "name" : "ATR",
+                "signalConfig" : {
+                    "interval" : 14
+                }
+            }
+        ],
         "handleOpening" : {
             "timerToClick" : "5m",
             "stepsInTime" : 52,
-            "timeStepSize" : "1h",
-            "signalsSettings" : [
-                {
-                    "name" : "MACD",
-                    "signalConfig" : {
-                        "short" : 5,
-                        "long" : 2,
-                        "signal" : 9
-                    }
-                },
-                {
-                    "name" : "STOCH",
-                    "signalConfig" : {
-                        "overSold" : 20,
-                        "overbought" : 80,
-                        "periodK" : 14,
-                        "periodD" : 1
-                    }
-                },
-                {
-                    "name" : "ROC",
-                    "signalConfig" : {
-                        "interval" : 24
-                    }
-                },
-                {
-                    "name" : "MADOUBLE",
-                    "signalConfig" : {
-                        "shortma" : 4,
-                        "longma" : 12
-                    }
-                },
-                {
-                    "name" : "ADX",
-                    "signalConfig" : {
-                        "currentMarketInterval" : 14,
-                        "longMarketInterval" : 48,
-                        "threshold" : 20
-                    }
-                },
-                {
-                    "name" : "RSI",
-                    "signalConfig" : {
-                        "interval" : 14
-                    }
-                },
-                {
-                    "name" : "ATR",
-                    "signalConfig" : {
-                        "interval" : 14
-                    }
-                }
-            ]
+            "timeStepSize" : "1h"
+
         },
         "handleClosing" : {
             "timerToClick" : "1m"

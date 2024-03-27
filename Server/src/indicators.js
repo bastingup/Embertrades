@@ -19,32 +19,32 @@ export async function buildIndicatorSignals(configData, asset, candles) {
   // STOCH
   indicatorName = "STOCH"
   indicatorResults[indicatorName] = indicatorSTOCH(
-    configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
+    configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
     candles)
 
   // MACD
   indicatorName = "MACD"
   indicatorResults[indicatorName] = indicatorMACD(
-    configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
+    configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
     candles)
 
   // ROC
   indicatorName = "ROC"
   indicatorResults[indicatorName] = indicatorROC(
-    configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
+    configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
     candles)
 
   // MADOUBLE
   indicatorName = "MADOUBLE"
   indicatorResults[indicatorName] = {"SHORT" : null, "LONG" : null}
-  indicatorResults[indicatorName].SHORT = indicatorMA(configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.shortma, candles)
-  indicatorResults[indicatorName].LONG = indicatorMA(configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.longma, candles)
+  indicatorResults[indicatorName].SHORT = indicatorMA(configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.shortma, candles)
+  indicatorResults[indicatorName].LONG = indicatorMA(configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.longma, candles)
 
   // ADX
   indicatorName = "ADX"
   indicatorResults[indicatorName] = {"PDI" : null, "MDI" : null, "ADX_R_SHORT" : null, "ADX_TREND_SHORT" : null}
-  const r = indicatorADX(configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig,
-                         configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.currentMarketInterval,
+  const r = indicatorADX(configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig,
+                         configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.currentMarketInterval,
                          candles)
   indicatorResults[indicatorName].PDI_SHORT = r.p
   indicatorResults[indicatorName].MDI_SHORT = r.m
@@ -54,26 +54,54 @@ export async function buildIndicatorSignals(configData, asset, candles) {
   // RSI
   indicatorName = "RSI"
   indicatorResults[indicatorName] = {"RSI" : null, "CROSS" : null}
-  const s = indicatorRSI(configData, configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.interval, candles)
+  const s = indicatorRSI(configData, configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0].signalConfig.interval, candles)
   indicatorResults[indicatorName].RSI = s.results
   indicatorResults[indicatorName].CROSS = s.crosses
 
   // ATR
   indicatorName = "ATR"
-  indicatorResults[indicatorName] = indicatorATR(configData.dcaSignalConfig.handleOpening.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0], candles)
+  indicatorResults[indicatorName] = indicatorATR(configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0], candles)
 
   return indicatorResults
 }
 
 export function signalResultsToTradingSignals(configData, indicatorResults) {
+  let result = {}
+  let signal = undefined
+
   for (const [key, value] of Object.entries(indicatorResults)) {
+    const lastEntry = indicatorResults[key].length - 1
+    let last;
+    const settings = getSignalSettingsByName(configData, key).signalConfig
+
+    // true = buy, false = sell, undefined = other
     switch (key) {
       case "STOCH":
+        last = indicatorResults[key][lastEntry]
+        signal = last > settings.overbought ? true : last < settings.oversold ? false : undefined;
+        break
+      case "MACD":
+        last = indicatorResults[key][lastEntry]
+        const previousLast = indicatorResults[key][lastEntry - 1]
+        const lastSign = Math.sign(last)
+        const previousLatSign = Math.sign(previousLast)
+        signal = lastSign > previousLatSign ? true : lastSign < previousLatSign ? false : undefined;
+        break
+      case "ADX":
+        for (const [p, value] of Object.entries(indicatorResults[key])) {
+          console.log(p)
+        }
+        console.log(indicatorResults[key])
         break
     }
+    result[key] = signal
   }
+  return result
 }
 
+function getSignalSettingsByName(configData, name) {
+  return configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === name })[0]
+}
 
 // --------------------------------------------------
 // --------------------------------------------------
@@ -83,6 +111,7 @@ export function signalResultsToTradingSignals(configData, indicatorResults) {
 
 let registeredAssets = 0
 export const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
+export const trendStrength = {"NO_TREND": "NO_TREND", "TREND": "TREND", "STRONG_TREND" : "STRONG_TREND", "EXT_TREND" : "EXT_TREND", "UNKNOWN" : "UNKNOWN"}
 export const crosses = {"DOWNTOP" : "DOWNTOP", "UPLOW" : "UPLOW", "STAYUP" : "STAYUP", "STAYDOWN" : "STAYDOWN", "UPTOP" : "UPTOP", "DOWNLOW" : "DOWNLOW", "NONE" : "NONE"}
 export const macdState = {"CROSSED_TO_POSITIVE": "CROSSED_TO_POSITIVE", "CROSSED_TO_NEGATIVE": "CROSSED_TO_NEGATIVE", "ZERO_ERROR": "ZERO_ERROR", "NO_CHANGE": "NO_CHANGE"}
 
@@ -358,18 +387,26 @@ function indicatorADX(configData, n, candles) {
   }
   return {"p" : pdiResult, "m" : mdiResult, "f" : fResult , "t" : tResult}
 }
-function determineADX(configData, result, p, m){
+function determineADX(configData, result, p, m) {
+
   let state = marketState.UNKNOWN
+  let strength = trendStrength.UNKNOWN
   if (result != undefined) {
-    if (result > configData.threshold) {
+    if (result > configData.threshes.strong) {
+      strength = result > configData.threshes.extremelyStrong ?
+      trendStrength.EXT_TREND : result > configData.threshes.veryStrong ?
+        trendStrength.STRONG_TREND : result > configData.threshes.strong ?
+          trendStrength.TREND : trendStrength.NO_TREND
       if (p > m) {state = marketState.BULL}
       else if (p < m) {state = marketState.BEAR}
     }
     else {
       state = marketState.RANGE
+      strength = trendStrength.NO_TREND
     }
   }
-  return state
+  
+  return {"state": state, "strength": strength}
 }
 
 // RSI
