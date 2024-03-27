@@ -63,6 +63,10 @@
                 }
             }
         ],
+        "backtest" : {
+            "stepsInTime" : 2000,
+            "timeStepSize" : "1h"
+        },
         "handleOpening" : {
             "timerToClick" : "5m",
             "stepsInTime" : 52,

@@ -14,15 +14,15 @@ export var binanceClient = null
 // --------------- EMBERWAVE DCA --------------------
 // --------------------------------------------------
 // --------------------------------------------------
-export async function getHistoricData(configData, asset, now = undefined) {
+export async function getHistoricData(options) {
   // Build market for asset at index
-  const market = asset + "/" + configData.dcaSignalConfig.baseCurrency
+  const market = options.asset + "/" + options.configData.dcaSignalConfig.baseCurrency
   // Since when do we need the data? This is from now, n steps in time backwards as defined in config file
-  let sinceNow = now == undefined ? Date.now() : now;
-  let since = (sinceNow - ((configData.tech.unixTimeToLookBack[configData.dcaSignalConfig.handleOpening.timeStepSize]) * configData.dcaSignalConfig.handleOpening.stepsInTime));
+  let sinceNow = options.now == undefined ? Date.now() : options.now;
+  let since = (Date.now() - ((options.configData.tech.unixTimeToLookBack[options.configData.dcaSignalConfig.handleOpening.timeStepSize]) * options.configData.dcaSignalConfig.handleOpening.stepsInTime));
   try {
     return await Promise.all([
-      binanceClient.fetch_ohlcv(market, configData.dcaSignalConfig.handleOpening.timeStepSize, since = since)
+      binanceClient.fetch_ohlcv(market, options.configData.dcaSignalConfig.handleOpening.timeStepSize, since = since)
     ]);
   } catch (e) {
     console.log(colors.infoLog + "MARKETS - " + e)}

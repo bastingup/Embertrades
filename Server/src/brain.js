@@ -27,7 +27,7 @@ async function buildAllInformation(configData, ASSET) {
     // e.G. if we get last 5 hours and it is 9.13am right now, it will get us the data for the entries:
     // 5am, 6am, 7am, 8am, 9am -> This way we can build our trading signals with the hsitoric data of the past "full" steps in time
     // and have one more datapoint that is up to date right now in this cycle, like real time data so we see how indicators have changed right now
-    let marketData = await markets.getHistoricData(configData, ASSET)
+    let marketData = await markets.getHistoricData({configData: configData, asset: ASSET, now: Date.now()})
 
     // Current pricate as last entry in our market data
     const currentMarketData = await markets.getCurrentPrice(configData, ASSET)
