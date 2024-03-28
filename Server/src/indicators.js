@@ -112,7 +112,7 @@ export function signalResultsToTradingSignals(configData, indicatorResults) {
                           p > settings.signalConfig.threshes.strong ? volatilitySignal.VOLATILE : volatilitySignal.STABLE
         break
       default:
-        signal.TRADE = decisionSignal.ERROR
+        signal.SIGNAL = decisionSignal.ERROR
         break
     }
     result[key] = signal

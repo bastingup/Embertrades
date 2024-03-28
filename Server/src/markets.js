@@ -57,7 +57,7 @@ export function buildCandlesFromDownloadedData(data) {
       "high" : data[i][2],
       "low" : data[i][3],
       "open" : data[i][1],
-      "open" : data[i][5]
+      "vol" : data[i][5]
     })
   }
   return candles;

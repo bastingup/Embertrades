@@ -21,7 +21,6 @@ export async function handlePositionOpening(configData) {
 
     // Build all the market informastion like candles, indicators etc
     let brainCell = await buildAllMarketInformation(configData, ASSET)
-    brainCell.ASSET = ASSET
     
     // Fires signals for buying or selling
     brainCell.signals = indicators.signalResultsToTradingSignals(configData, brainCell.indicators)
@@ -35,6 +34,9 @@ export async function handlePositionClosing(configData) {
 
 async function openPosition(configData, brainCell) {
     console.log(colors.infoLog + "BRAIN - Looking for positions to open...")
+
+
+    console.log(colors.infoLog + "BRAIN - Opening not implemented yet")
 }
 
 async function buildAllMarketInformation(configData, ASSET, dateNow = undefined) {
@@ -61,8 +63,8 @@ async function buildAllMarketInformation(configData, ASSET, dateNow = undefined)
 
     const fAg = (await getFearAndGreedIndex()).data
 
-    return {"candles": candles,
-            "market": marketData,
+    return {"ASSET": ASSET,
+            "candles": candles,
             "indicators": indicatorResults,
             "supportResistance": supRes,
             "fearAndGreed": fAg}
