@@ -36,17 +36,19 @@ export async function handlePositionClosing(configData) {
 export async function handlePositionBacktesting(configData) {
 
     let configBacktest = buildSimulationConfig(configData)
+    let allMarkets = {}
+    for (let i = 0; i < configData.dcaSignalConfig.whiteListed.length; i++) {
+        const ASSET = configData.dcaSignalConfig.whiteListed[i]
+        allMarkets[ASSET] = await buildAllMarketInformation(configBacktest, ASSET)
+        break // Break after first asset for dev purposes
+    }
+    console.log(allMarkets)
 
 }
 
 async function openPosition(configData, brainCell) {
     console.log(colors.infoLog + "BRAIN - Looking for positions to open...")
     console.log(colors.infoLog + "BRAIN - Opening not implemented yet")
-}
-
-
-function generateNowsInTime(configData) {
-    // TODO this needs to return an iterable object with steps in time
 }
 
 function buildSimulationConfig(configData) {

@@ -1,7 +1,7 @@
 {
     "name" : "Embertrades",
     "v" : 0.4,
-    "mode": "PAPER",
+    "mode": "BACKTEST",
     "modes":["PAPER", "LIVE", "BACKTEST", "MIZAR"],
     
     "dcaSignalConfig" : {
