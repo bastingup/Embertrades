@@ -5,7 +5,7 @@
     "modes":["PAPER", "LIVE", "BACKTEST", "MIZAR"],
     
     "dcaSignalConfig" : {
-        "whiteListed" : ["ETH", "NEAR", "LTC"],
+        "whiteListed" : ["ETH", "NEAR", "BNB"],
         "baseCurrency" : "USDT",
         "realTrading" : false,
         "signalsSettings" : [

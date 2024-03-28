@@ -17,29 +17,57 @@ import * as ways from "trendyways";
 // --------------------------------------------------
 export async function handlePositionOpening(configData) {
 
-    const ASSET = configData.dcaSignalConfig.whiteListed[2]
+    // This will hold all our braincells
+    let brainArea = {}
 
-    // Build all the market informastion like candles, indicators etc
-    let brainCell = await buildAllMarketInformation(configData, ASSET)
-    
-    // Fires signals for buying or selling
-    brainCell.signals = indicators.signalResultsToTradingSignals(configData, brainCell.indicators)
-    
-    openPosition(configData, brainCell)
-    console.log(brainCell)
+    // Build all information for all asssets
+    for (let i = 0; i < configData.dcaSignalConfig.whiteListed.length; i++) {
+        const ASSET = configData.dcaSignalConfig.whiteListed[i]
+        brainArea[ASSET] = await buildBrainCell(configData, ASSET)
+    }
+
+    // Check if we want to open any positions
+    openPosition(configData, brainArea)
 }
 
 export async function handlePositionClosing(configData) {
 }
 
+export async function handlePositionBacktesting(configData) {
+
+    let configBacktest = buildSimulationConfig(configData)
+
+}
+
 async function openPosition(configData, brainCell) {
     console.log(colors.infoLog + "BRAIN - Looking for positions to open...")
-
-
     console.log(colors.infoLog + "BRAIN - Opening not implemented yet")
 }
 
-async function buildAllMarketInformation(configData, ASSET, dateNow = undefined) {
+
+function generateNowsInTime(configData) {
+    // TODO this needs to return an iterable object with steps in time
+}
+
+function buildSimulationConfig(configData) {
+    let configDataLocal = configData
+    if (configData.mode == "BACKTEST") {
+        configDataLocal.dcaSignalConfig.handleOpening.stepsInTime = configDataLocal.dcaSignalConfig.backtest.stepsInTime
+    }
+    return configDataLocal
+}
+
+async function buildBrainCell(configData, ASSET) {
+    // Build all the market informastion like candles, indicators etc
+    let brainCell = await buildAllMarketInformation(configData, ASSET)
+    
+    // Fires signals for buying or selling
+    brainCell.signals = indicators.signalResultsToTradingSignals(configData, brainCell.indicators)
+ 
+    return brainCell
+}
+
+async function buildAllMarketInformation(configData, ASSET) {
 
     // This is the historic market data
     // e.G. if we get last 5 hours and it is 9.13am right now, it will get us the data for the entries:
@@ -68,10 +96,6 @@ async function buildAllMarketInformation(configData, ASSET, dateNow = undefined)
             "indicators": indicatorResults,
             "supportResistance": supRes,
             "fearAndGreed": fAg}
-}
-
-async function loadOpenPositions() {
-
 }
 
 async function getFearAndGreedIndex() {

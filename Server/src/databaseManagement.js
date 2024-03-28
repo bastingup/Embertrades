@@ -5,7 +5,7 @@ import * as colors from "./colors.js"
 export let db = null
 let registeredDatabases = 0
 const dataBases = [
-    "openPositions", "closedPositions"
+    "paperPositions", "livePositions"
 ]
 
 export function loadDatabase(configData) {
