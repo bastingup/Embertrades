@@ -1,6 +1,8 @@
 {
     "name" : "Embertrades",
-    "v" : 0.3,
+    "v" : 0.4,
+    "mode": "PAPER",
+    "modes":["PAPER", "LIVE", "BACKTEST", "MIZAR"],
     
     "dcaSignalConfig" : {
         "whiteListed" : ["ETH", "DOT", "SOL"],
@@ -113,7 +115,7 @@
         "fakeBUSDTotal" : 2000
     },
 
-    "mode" : "backtest_2",
+    "modelegacy" : "backtest_2",
     "availableModes" : ["dev", "backtest", "backtest_2", "live_trading", "simulative_trading"],
     "trading" : {
         "markets" : ["BTC"],

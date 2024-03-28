@@ -18,8 +18,7 @@ export async function handlePositionOpening(configData) {
 
     // Build all the market informastion like candles, indicators etc
     let brainCell = await buildAllMarketInformation(configData, configData.dcaSignalConfig.whiteListed[0])
-    brainCell.fearAndGreed = (await getFearAndGreedIndex()).data
-
+    
     // Fires signals for buying or selling
     brainCell.signals = indicators.signalResultsToTradingSignals(configData, brainCell.indicators)
     
@@ -56,10 +55,13 @@ async function buildAllMarketInformation(configData, ASSET, dateNow = undefined)
     let indicatorResults;
     await indicators.buildIndicatorSignals(configData, ASSET, candles).then(function(data) {indicatorResults = data})
 
+    const fAg = (await getFearAndGreedIndex()).data
+
     return {"candles": candles,
             "market": marketData,
             "indicators": indicatorResults,
-            "supportResistance": supRes}
+            "supportResistance": supRes,
+            "fearAndGreed": fAg}
 }
 
 async function loadOpenPositions() {
