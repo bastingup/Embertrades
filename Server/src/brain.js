@@ -9,6 +9,7 @@ import * as https from "https"
 import fetch from 'node-fetch';
 import * as ways from "trendyways";
 
+
 // --------------------------------------------------
 // --------------------------------------------------
 // --------------- EMBERWAVE DCA --------------------
@@ -16,8 +17,11 @@ import * as ways from "trendyways";
 // --------------------------------------------------
 export async function handlePositionOpening(configData) {
 
+    const ASSET = configData.dcaSignalConfig.whiteListed[2]
+
     // Build all the market informastion like candles, indicators etc
-    let brainCell = await buildAllMarketInformation(configData, configData.dcaSignalConfig.whiteListed[0])
+    let brainCell = await buildAllMarketInformation(configData, ASSET)
+    brainCell.ASSET = ASSET
     
     // Fires signals for buying or selling
     brainCell.signals = indicators.signalResultsToTradingSignals(configData, brainCell.indicators)
@@ -30,7 +34,7 @@ export async function handlePositionClosing(configData) {
 }
 
 async function openPosition(configData, brainCell) {
-
+    console.log(colors.infoLog + "BRAIN - Looking for positions to open...")
 }
 
 async function buildAllMarketInformation(configData, ASSET, dateNow = undefined) {
@@ -75,6 +79,13 @@ async function getFearAndGreedIndex() {
     .catch(error => console.error('Error:', error));
 }
 
+export function calculateAverage(array) { 
+    var sum = 0; 
+    for (var i = 0; i < array.length; i++) { 
+      sum += array[i]; 
+    } 
+    return sum / array.length; 
+} 
 
 // --------------------------------------------------
 // --------------- ALLLLLLLLLLL ISSSS LEGACYYYYYYYYYYYYY ---------------------

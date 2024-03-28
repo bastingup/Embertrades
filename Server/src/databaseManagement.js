@@ -16,7 +16,6 @@ export function loadDatabase(configData) {
 
     // Initialize all databases
     dataBases.forEach(function(dbName) {
-        console.log(dbName)
         db[dbName] = new Datastore('./db/' + dbName + '.db');
         db[dbName].loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
     })

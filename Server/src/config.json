@@ -5,7 +5,7 @@
     "modes":["PAPER", "LIVE", "BACKTEST", "MIZAR"],
     
     "dcaSignalConfig" : {
-        "whiteListed" : ["ETH", "DOT", "SOL"],
+        "whiteListed" : ["ETH", "DOT", "BTC"],
         "baseCurrency" : "USDT",
         "realTrading" : false,
         "signalsSettings" : [
@@ -68,7 +68,10 @@
                 "name" : "ATR",
                 "type" : "VOLATILITY",
                 "signalConfig" : {
-                    "interval" : 14
+                    "interval" : 14,
+                    "threshes": {
+                        "strong": 10, "veryStrong": 20
+                    }
                 }
             }
         ],

@@ -4,12 +4,18 @@ import * as dbmanagement from "./databaseManagement.js";
 import * as markets from './markets.js';
 import * as colors from "./colors.js"
 import * as server from "./server.js"
+import * as brain from "./brain.js"
 
 // --------------------------------------------------
 // --------------------------------------------------
 // --------------- EMBERWAVE DCA --------------------
 // --------------------------------------------------
 // --------------------------------------------------
+
+export const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
+export const decisionSignal = {"BUY": "BUY", "SELL": "SELL", "NONE" : "NONE", "ERROR": "ERROR"}
+export const trendStrength = {"NO_TREND": "NO_TREND", "TREND": "TREND", "STRONG_TREND" : "STRONG_TREND", "EXT_TREND" : "EXT_TREND", "UNKNOWN" : "UNKNOWN"}
+export const volatilitySignal = {"STABLE": "STABLE", "VOLATILE": "VOLATILE", "VERY_VOLATILE": "VERY_VOLATILE"}
 
 export async function buildIndicatorSignals(configData, asset, candles) {
 
@@ -70,22 +76,22 @@ export function signalResultsToTradingSignals(configData, indicatorResults) {
 
   for (const [key, value] of Object.entries(indicatorResults)) {
     let signal = {}
-    let last;
+    
     const lastEntry = indicatorResults[key].length - 1
+    const last = indicatorResults[key][lastEntry]
     const settings = getSignalSettingsByName(configData, key)
     signal.TYPE = settings.type
+    signal.SIGNAL = decisionSignal.ERROR
 
     switch (key) {
       case "STOCH":
-        last = indicatorResults[key][lastEntry]
-        signal.TRADE = last > settings.signalConfig.overbought ? decisionSignal.SELL : last < settings.signalConfig.oversold ? decisionSignal.BUY : decisionSignal.NONE;
+        signal.SIGNAL = last > settings.signalConfig.overbought ? decisionSignal.SELL : last < settings.signalConfig.oversold ? decisionSignal.BUY : decisionSignal.NONE;
         break
       case "MACD":
-        last = indicatorResults[key][lastEntry]
         const previousLast = indicatorResults[key][lastEntry - 1]
         const lastSign = Math.sign(last)
         const previousLatSign = Math.sign(previousLast)
-        signal.TRADE = lastSign > previousLatSign ? decisionSignal.SELL : lastSign < previousLatSign ? decisionSignal.BUY : decisionSignal.NONE;
+        signal.SIGNAL = lastSign > previousLatSign ? decisionSignal.SELL : lastSign < previousLatSign ? decisionSignal.BUY : decisionSignal.NONE;
         break
       case "ADX":
         // Maybe re-do when decided what to use ADX for really
@@ -94,10 +100,19 @@ export function signalResultsToTradingSignals(configData, indicatorResults) {
         let resStrengths = Array.from(new Set(a.map((item) => item.strength))).reduce((acc,curr)=> (acc[curr]=0,acc),{});
         for (let i = 0; i < a.length; i++) {resStates[a[i].state] += 1, resStrengths[a[i].strength] += 1}
         const keysSorted = Object.keys(resStates).sort(function(a,b){return resStates[b]-resStates[a]}) // sorting
-        signal.TRADE = indicatorResults[key].ADX_TREND.slice(-1)
+        signal.SIGNAL = indicatorResults[key].ADX_TREND.slice(-1)
+        break
+      case "RSI":
+        signal.SIGNAL = last > settings.signalConfig.overbought ? decisionSignal.SELL : last < settings.signalConfig.oversold ? decisionSignal.BUY : decisionSignal.NONE;
+        break
+      case "ATR":
+        const recentAverage = brain.calculateAverage(indicatorResults[key].slice(0, -1).slice(-7).map(Number))
+        const p = (1 - Math.abs((recentAverage / parseFloat(last)))) * 100
+        signal.SIGNAL = p > settings.signalConfig.threshes.veryStrong ? volatilitySignal.VERY_VOLATILE :
+                          p > settings.signalConfig.threshes.strong ? volatilitySignal.VOLATILE : volatilitySignal.STABLE
         break
       default:
-        signal.TRADE = decisionSignal.NONE
+        signal.TRADE = decisionSignal.ERROR
         break
     }
     result[key] = signal
@@ -116,9 +131,9 @@ function getSignalSettingsByName(configData, name) {
 // --------------------------------------------------
 
 let registeredAssets = 0
-export const marketState = {"BULL": "BULL", "BEAR": "BEAR", "RANGE" : "RANGE", "UNKNOWN" : "UNKNOWN"}
-export const decisionSignal = {"BUY": "BUY", "SELL": "SELL", "NONE" : "NONE"}
-export const trendStrength = {"NO_TREND": "NO_TREND", "TREND": "TREND", "STRONG_TREND" : "STRONG_TREND", "EXT_TREND" : "EXT_TREND", "UNKNOWN" : "UNKNOWN"}
+
+
+
 export const crosses = {"DOWNTOP" : "DOWNTOP", "UPLOW" : "UPLOW", "STAYUP" : "STAYUP", "STAYDOWN" : "STAYDOWN", "UPTOP" : "UPTOP", "DOWNLOW" : "DOWNLOW", "NONE" : "NONE"}
 export const macdState = {"CROSSED_TO_POSITIVE": "CROSSED_TO_POSITIVE", "CROSSED_TO_NEGATIVE": "CROSSED_TO_NEGATIVE", "ZERO_ERROR": "ZERO_ERROR", "NO_CHANGE": "NO_CHANGE"}
 
