@@ -15,23 +15,34 @@ import * as ways from "trendyways";
 // --------------------------------------------------
 // --------------------------------------------------
 export async function handlePositionOpening(configData) {
-    let brainCell = await buildAllInformation(configData, configData.dcaSignalConfig.whiteListed[0])
-    const fearGreed = await getFearAndGreedIndex()
-    brainCell.fearAndGreed = fearGreed.data
 
+    // Build all the market informastion like candles, indicators etc
+    let brainCell = await buildAllMarketInformation(configData, configData.dcaSignalConfig.whiteListed[0])
+    brainCell.fearAndGreed = (await getFearAndGreedIndex()).data
+
+    // Fires signals for buying or selling
+    brainCell.signals = indicators.signalResultsToTradingSignals(configData, brainCell.indicators)
+    
+    openPosition(configData, brainCell)
     console.log(brainCell)
 }
 
 export async function handlePositionClosing(configData) {
 }
 
-async function buildAllInformation(configData, ASSET, dateRange = undefined) {
+async function openPosition(configData, brainCell) {
+
+}
+
+async function buildAllMarketInformation(configData, ASSET, dateNow = undefined) {
 
     // This is the historic market data
     // e.G. if we get last 5 hours and it is 9.13am right now, it will get us the data for the entries:
     // 5am, 6am, 7am, 8am, 9am -> This way we can build our trading signals with the hsitoric data of the past "full" steps in time
     // and have one more datapoint that is up to date right now in this cycle, like real time data so we see how indicators have changed right now
-    let marketData = await markets.getHistoricData({configData: configData, asset: ASSET, now: Date.now()})
+    let marketData = await markets.getHistoricData({configData: configData,
+                                                    asset: ASSET,
+                                                    now: Date.now()})
 
     // Current pricate as last entry in our market data
     const currentMarketData = await markets.getCurrentPrice(configData, ASSET)
@@ -45,13 +56,9 @@ async function buildAllInformation(configData, ASSET, dateRange = undefined) {
     let indicatorResults;
     await indicators.buildIndicatorSignals(configData, ASSET, candles).then(function(data) {indicatorResults = data})
 
-    // What do all the things tell us to do
-    const signals = indicators.signalResultsToTradingSignals(configData, indicatorResults)
-
     return {"candles": candles,
             "market": marketData,
             "indicators": indicatorResults,
-            "signals": signals,
             "supportResistance": supRes}
 }
 

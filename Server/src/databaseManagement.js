@@ -4,6 +4,9 @@ import * as colors from "./colors.js"
 
 export let db = null
 let registeredDatabases = 0
+const dataBases = [
+    "openPositions", "closedPositions"
+]
 
 export function loadDatabase(configData) {
 
@@ -11,17 +14,17 @@ export function loadDatabase(configData) {
     var localDbPath = './db/main.db'
     db = createNewDatabase(localDbPath);
 
-    // Orderbook
-    db.openPositions = new Datastore('./db/openPositions.db');
-    db.closedPositions = new Datastore('./db/closedPositions.db');
-
-    db.openPositions.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
-    db.closedPositions.loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
+    // Initialize all databases
+    dataBases.forEach(function(dbName) {
+        console.log(dbName)
+        db[dbName] = new Datastore('./db/' + dbName + '.db');
+        db[dbName].loadDatabase(function (err) { giveFeedbackDBAlive(configData);});
+    })
 }
 
 export function giveFeedbackDBAlive(configData) {
     registeredDatabases = registeredDatabases + 1
-    if (registeredDatabases === 2) {
+    if (registeredDatabases === dataBases.length) {
         server.eventBus.emit("all-db-alive", null, configData)
         registeredDatabases = 0
     }
