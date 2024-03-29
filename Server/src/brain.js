@@ -51,11 +51,18 @@ export async function handlePositionBacktesting(configData) {
             "candles": candles,
             "indicators": indicatorResults
         }
-            
-        break // Break after first asset for dev purposes
     }
-    console.log(allMarkets["ETH"].candles.length, allMarkets["ETH"].indicators.STOCH.length)
 
+    const firstAsset = configBacktest.dcaSignalConfig.whiteListed[0]
+    for (let f = configBacktest.dcaSignalConfig.backtest.beginAtStep; f < allMarkets[firstAsset].candles.length; f++) {
+        const nrOfAssets = configBacktest.dcaSignalConfig.whiteListed.length
+        for (let k = 0; k < nrOfAssets; k++) {
+            
+            // Every step in time, every asset
+            const ASSET = configBacktest.dcaSignalConfig.whiteListed[k]
+            console.log(ASSET, allMarkets[ASSET].candles[f])
+        }
+    }
 }
 
 async function openPosition(configData, brainCell) {
