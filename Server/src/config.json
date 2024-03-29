@@ -76,7 +76,7 @@
             }
         ],
         "backtest" : {
-            "stepsInTime" : 2000,
+            "stepsInTime" : 100,
             "timeStepSize" : "1h"
         },
         "handleOpening" : {

@@ -25,7 +25,7 @@ export async function handlePositionOpening(configData) {
         const ASSET = configData.dcaSignalConfig.whiteListed[i]
         brainArea[ASSET] = await buildBrainCell(configData, ASSET)
     }
-
+    console.log(brainArea)
     // Check if we want to open any positions
     openPosition(configData, brainArea)
 }
@@ -37,12 +37,24 @@ export async function handlePositionBacktesting(configData) {
 
     let configBacktest = buildSimulationConfig(configData)
     let allMarkets = {}
-    for (let i = 0; i < configData.dcaSignalConfig.whiteListed.length; i++) {
-        const ASSET = configData.dcaSignalConfig.whiteListed[i]
-        allMarkets[ASSET] = await buildAllMarketInformation(configBacktest, ASSET)
+    for (let i = 0; i < configBacktest.dcaSignalConfig.whiteListed.length; i++) {
+        const ASSET = configBacktest.dcaSignalConfig.whiteListed[i]
+        const marketData = await markets.getHistoricData({configData: configBacktest,
+                                                            asset: ASSET,
+                                                            now: Date.now()})
+ 
+        const candles = markets.buildCandlesFromDownloadedData(marketData[0]);
+        let indicatorResults;
+        await indicators.buildIndicatorSignals(configData, ASSET, candles).then(function(data) {indicatorResults = data})
+        
+        allMarkets[ASSET] = {
+            "candles": candles,
+            "indicators": indicatorResults
+        }
+            
         break // Break after first asset for dev purposes
     }
-    console.log(allMarkets)
+    console.log(allMarkets["ETH"].candles.length, allMarkets["ETH"].indicators.STOCH.length)
 
 }
 
@@ -60,12 +72,8 @@ function buildSimulationConfig(configData) {
 }
 
 async function buildBrainCell(configData, ASSET) {
-    // Build all the market informastion like candles, indicators etc
     let brainCell = await buildAllMarketInformation(configData, ASSET)
-    
-    // Fires signals for buying or selling
     brainCell.signals = indicators.signalResultsToTradingSignals(configData, brainCell.indicators)
- 
     return brainCell
 }
 

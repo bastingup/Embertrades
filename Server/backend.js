@@ -76,8 +76,8 @@ async function initializationComplete(configData) {
     console.log(colors.infoLog + "MAIN - " + instructionalMessage(configData));
 
     // Check if we are backteting or anything else
-    if (configData.mode === "BACKTEST") {
-        brain.handlePositionBacktesting(configData)
+    if (configData.mode == "BACKTEST") {
+        await brain.handlePositionBacktesting(configData)
     } else {
         // Check for positions to OPEN and CLOSE
         setInterval(brain.handlePositionClosing, configData.tech.unixTimeToLookBack[configData.dcaSignalConfig.handleClosing.timerToClick], configData);
