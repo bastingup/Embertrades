@@ -1,7 +1,7 @@
 {
     "name" : "Embertrades",
     "v" : 0.4,
-    "mode": "BACKTEST",
+    "mode": "PAPER",
     "modes":["PAPER", "LIVE", "BACKTEST", "MIZAR"],
     
     "dcaSignalConfig" : {
@@ -11,11 +11,18 @@
         "signalsSettings" : [
             {
                 "name" : "MACD",
-                "type" : "MOMENTUM",
+                "type" : "TREND",
                 "signalConfig" : {
                     "short" : 5,
                     "long" : 2,
                     "signal" : 9
+                }
+            },
+            {
+                "name" : "OBV",
+                "type" : "TREND",
+                "signalConfig" : {
+                    
                 }
             },
             {
@@ -76,8 +83,8 @@
             }
         ],
         "backtest" : {
-            "stepsInTime" : 100,
-            "beginAtStep" : 15,
+            "stepsInTime" : 1000,
+            "windowSize" : 32,
             "timeStepSize" : "1h"
         },
         "handleOpening" : {

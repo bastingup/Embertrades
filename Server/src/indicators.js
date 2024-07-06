@@ -5,6 +5,7 @@ import * as markets from './markets.js';
 import * as colors from "./colors.js"
 import * as server from "./server.js"
 import * as brain from "./brain.js"
+import * as ways from "trendyways";
 
 // --------------------------------------------------
 // --------------------------------------------------
@@ -27,6 +28,12 @@ export async function buildIndicatorSignals(configData, asset, candles) {
   indicatorResults[indicatorName] = indicatorSTOCH(
     configData.dcaSignalConfig.signalsSettings.filter(function (ind) { return ind.name === indicatorName })[0],
     candles)
+
+  // OBV
+  indicatorName = "OBV"
+  let closeList = [], volList = []
+  candles.slice(0, -1).map(({ close, vol }) => (closeList.push(close), volList.push(vol)))
+  indicatorResults[indicatorName] = ways.obv(closeList, volList)
 
   // MACD
   indicatorName = "MACD"

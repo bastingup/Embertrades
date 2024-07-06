@@ -8,6 +8,7 @@ import {default as fs} from "fs";
 import * as https from "https"
 import fetch from 'node-fetch';
 import * as ways from "trendyways";
+import { sign } from "crypto";
 
 
 // --------------------------------------------------
@@ -37,31 +38,37 @@ export async function handlePositionBacktesting(configData) {
 
     let configBacktest = buildSimulationConfig(configData)
     let allMarkets = {}
-    for (let i = 0; i < configBacktest.dcaSignalConfig.whiteListed.length; i++) {
-        const ASSET = configBacktest.dcaSignalConfig.whiteListed[i]
-        const marketData = await markets.getHistoricData({configData: configBacktest,
-                                                            asset: ASSET,
-                                                            now: Date.now()})
- 
-        const candles = markets.buildCandlesFromDownloadedData(marketData[0]);
-        let indicatorResults;
-        await indicators.buildIndicatorSignals(configData, ASSET, candles).then(function(data) {indicatorResults = data})
-        
-        allMarkets[ASSET] = {
-            "candles": candles,
-            "indicators": indicatorResults
-        }
+    const ASSETS = configBacktest.dcaSignalConfig.whiteListed
+    const windowSize = configBacktest.dcaSignalConfig.backtest.windowSize
+    for (let i = 0; i < ASSETS.length; i++) {
+        allMarkets[ASSETS[i]] = (await markets.getHistoricData({configData: configBacktest,
+                                                            asset: ASSETS[i],
+                                                            now: Date.now()}))[0]
     }
 
-    const firstAsset = configBacktest.dcaSignalConfig.whiteListed[0]
-    for (let f = configBacktest.dcaSignalConfig.backtest.beginAtStep; f < allMarkets[firstAsset].candles.length; f++) {
-        const nrOfAssets = configBacktest.dcaSignalConfig.whiteListed.length
-        for (let k = 0; k < nrOfAssets; k++) {
+    for (let f = windowSize; f < allMarkets[ASSETS[0]].length; f++) {
+        ASSETS.forEach(async function(ASSET) {
+
+            const currentTimeWindow = allMarkets[ASSET].slice(f + 1 - windowSize, f)
+            const candles = markets.buildCandlesFromDownloadedData(currentTimeWindow);
+
+            let indicatorResults;
+            await indicators.buildIndicatorSignals(configBacktest, ASSET, candles).then(function(data) {indicatorResults = data})
             
-            // Every step in time, every asset
-            const ASSET = configBacktest.dcaSignalConfig.whiteListed[k]
-            console.log(ASSET, allMarkets[ASSET].candles[f])
-        }
+            const signals = indicators.signalResultsToTradingSignals(configBacktest, indicatorResults)
+            const supRes = ways.floorPivots(candles.map(({ high, low, close }) => ({"h": high, "l": low, "c": close}))).slice(-1)[0].floor
+
+            const braincell =  {
+                "ASSET": ASSET,
+                "candles": candles,
+                "indicators": indicatorResults,
+                "supportResistance": supRes,
+                "signals" : signals,
+                "fearAndGreed": undefined
+            }
+            
+            console.log(braincell)
+        })
     }
 }
 
@@ -73,6 +80,8 @@ async function openPosition(configData, brainCell) {
 function buildSimulationConfig(configData) {
     let configDataLocal = configData
     if (configData.mode == "BACKTEST") {
+        // Not sure why not working :)
+        // ✨✨✨✨
         configDataLocal.dcaSignalConfig.handleOpening.stepsInTime = configDataLocal.dcaSignalConfig.backtest.stepsInTime
     }
     return configDataLocal
@@ -100,7 +109,7 @@ async function buildAllMarketInformation(configData, ASSET) {
 
     // Turn market data array into candles
     const candles = markets.buildCandlesFromDownloadedData(marketData[0]);
-    const supRes = ways.floorPivots(candles.map(({ high, low, close }) => ({"h": high, "l": low, "c": close}))).splice(-1)[0].floor
+    const supRes = ways.floorPivots(candles.map(({ high, low, close }) => ({"h": high, "l": low, "c": close}))).slice(-1)[0].floor
 
     // Build Indicator signals
     let indicatorResults;
